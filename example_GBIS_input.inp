@@ -1,0 +1,90 @@
+% =========================================================================
+% Geodetic Bayesian Inversion Software (GBIS)
+% Software for the Bayesian inversion of geodetic data.
+% Copyright: Marco Bagnardi, 2018
+%
+% Email: gbis.software@gmail.com
+%
+% Reference: 
+% Bagnardi M. & Hooper A, (2018). 
+% Inversion of surface deformation data for rapid estimates of source 
+% parameters and uncertainties: A Bayesian approach. Geochemistry, 
+% Geophysics, Geosystems, 19. https://doi.org/10.1029/2018GC007585
+%
+% =========================================================================
+% Last update: 8 August, 2018
+
+% INPUT FILE
+
+%% Reference point and Area of interest
+geo.referencePoint =[44.879886782010004;38.52089042312]
+geo.boundingBox =[44.459887113810005;38.87089014662;45.36088640202001;38.066890781779996]
+
+
+%% InSAR data
+% Make sure insarID is unique!
+
+%% GPS data
+
+gps.dataPath = '/Users/jcondon/phd/code/GBIS/GBIS_V1.1/Example/Data/GPS_data.txt';   % Path to GPS data file
+gps.weight = 1/1;    % Weight of GPS data vs. InSAR data in inversion (e.g., 10/1)
+
+%% Model parameters
+
+modelInput.nu = 0.25;     % Poisson's ratio (Shear modulus is set to 1)
+
+% Mogi 'M'
+%                             X       Y      Z      DV
+modelInput.mogi.start = [    0;     0;   3000;    -1e6; ];      % starting model
+modelInput.mogi.step =  [   50;    50;    100;    1e05; ];      % initial maximium step size
+modelInput.mogi.lower = [-8000; -2000;    100;    -1e9; ];      % lower bounds on m
+modelInput.mogi.upper = [ 8000;  9000;  10000;    -1e2; ];      % upper bounds on m
+
+% Rectangular dipping dike (Okada) 'D'
+%                            L       W      Z     Dip    Str      X       Y     Op
+modelInput.dike.start = [ 7000;   5000;   500;  -75.0;   270;  10000;  -3000;  1.0];    % starting model
+modelInput.dike.step =  [  100;    100;   100;     10;    10;    100;    100; 0.10];    % initial maximium step size
+modelInput.dike.lower = [  100;    100;   100;  -89.9;   180;   3000;  -9000;  0.1];    % lower bounds on m
+modelInput.dike.upper = [15000;  10000; 10000;   -0.1;   360;  15000;   3000; 10.0];    % upper bounds on m
+
+% Rectangular fault (Okada) 'F'
+%                            L       W      Z     Dip     Str      X       Y      SS       DS
+modelInput.fault.start = [ 8050;   8050;   25000;   -75.0;   312;   0;  0;   1.0;     1.0];    % starting model
+modelInput.fault.step =  [ 1000;     1000;    100;      10;     10;    100;      100;  0.01;    0.01];    % initial maximium step size % changed DS SS from 0.01 to 0.1
+modelInput.fault.lower = [ 3000;   3000;   100;   -89.9;   0;  -100000;   -10000;  -30.0;   -30.0];    % lower bounds on m
+modelInput.fault.upper = [30000;   30000;   40000;   -0.1;   360;  100000;    100000  ;  30.0;    30.0];    % upper bounds on m
+
+% McTigue 'T'
+%                                X       Y      Z     R   DP/mu
+modelInput.mctigue.start = [ -7000;   4000;  3000; 1000; -10e-04; ];  % starting model
+modelInput.mctigue.step =  [   100;    100;    50;    0;   1e-04; ];  % initial maximium step size
+modelInput.mctigue.lower = [-20000; -20000;   100; 1000;   -10e3; ];  % lower bounds on m
+modelInput.mctigue.upper = [ 20000;  20000; 10000; 1000;    10e3; ];  % upper bounds on m
+
+% Penny-shaped crack 'P'
+%                              X       Y      Z     R    DP/mu
+modelInput.penny.start = [     0;      0;  2000; 1000; -1e-03; ];    % starting model
+modelInput.penny.step =  [   100;    100;    50;  100;  1e-04; ];    % initial maximium step size
+modelInput.penny.lower = [-20000; -20000;   100;  100;   -1e3; ];    % lower bounds on m
+modelInput.penny.upper = [ 20000;  20000; 30000; 2000;    1e3; ];    % upper bounds on m
+
+% Yang 'Y'
+%                             X       Y      Z      a     a/b  Str    Pln    DP/mu
+modelInput.yang.start = [     0;      0;  5000;   500;    0.5; 270; -89.9; -1e-03;];    % starting model
+modelInput.yang.step =  [   100;    100;    50;    50;    .01;   1;     1;  1e-04;];    % initial maximium step size
+modelInput.yang.lower = [-20000; -20000;  1000;     1;   0.01;   1; -89.9;   -1e3;];    % lower bounds on m
+modelInput.yang.upper = [ 20000;  20000; 30000; 20000;   0.99; 359;  -0.1;    1e3;];    % upper bounds on m
+
+% Horizontal rectangular sill (Okada) 'S'
+%                            L     W      Z   Str     X      Y    Op
+modelInput.sill.start = [ 2000; 2000;  1100;  180;-2000;  2000;   -1.0;]; % starting model
+modelInput.sill.step  = [   50;   50;    50;    1;  100;   100;    0.01];  % initial maximium step size
+modelInput.sill.lower = [  300;  300;   100;    1;-20000; -20000;  -50];  % lower bounds on m
+modelInput.sill.upper = [10000;10000; 10000;  359; 20000;  20000; -0.01];  % upper bounds on m
+
+% Hinged double dike (custum made) 'H'
+%                           X_1     Y_1     L_1     W_1     Z_1    Dip_1     Op_1    W_2   Dip_2  Op_2  Strike
+modelInput.hing.start = [   100;    100;   1000;   1000;     10;   -85.0;    0.5;  1000;   -10.0;  0.5;    30]; % starting model
+modelInput.hing.step =  [   100;    100;    100;    100;    100;       1;   0.01;   100;       1; 0.01;     1]; % initial maximium step size
+modelInput.hing.lower = [  -200;   -200;    100;    100;      1;   -89.9;   0.01;   100;   -89.9; 0.01;     1]; % lower bounds on m
+modelInput.hing.upper = [   200;    200;   7000;   7000;    200;    -0.1;   10.0;  9000;   -0.01; 10.0;   359]; % upper bounds on m
