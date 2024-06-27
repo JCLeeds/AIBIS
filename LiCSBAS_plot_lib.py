@@ -83,7 +83,7 @@ def make_im_png(data, pngfile, cmap, title, vmin=None, vmax=None, cbar=True,flat
     
     return
 
-def make_scatter_png(lon,lat,data,pngfile,cmap,title,vmin=None, vmax=None, cbar=True):
+def make_scatter_png(lon,lat,data,pngfile,cmap,title,vmin=None, vmax=None, cbar=True,downsamp=None):
     """
     Make png image. ADDED BY JOHN CONDON 
     cmap can be 'insar'. To wrap data, np.angle(np.exp(1j*x/cycle)*cycle)
@@ -105,8 +105,10 @@ def make_scatter_png(lon,lat,data,pngfile,cmap,title,vmin=None, vmax=None, cbar=
     ### Plot
     fig, ax = plt.subplots(1, 1, figsize=(figsizex, figsizey))
     plt.tight_layout()
-    
-    im = ax.scatter(lon,lat, c=data, cmap=mpl.colors.LinearSegmentedColormap('insar', cdict), s=1)
+    if downsamp:
+        im = ax.scatter(lon,lat, c=data, cmap=mpl.colors.LinearSegmentedColormap('insar', cdict), s=10)
+    else:
+        im = ax.scatter(lon,lat, c=data, cmap=mpl.colors.LinearSegmentedColormap('insar', cdict), s=1)
     # ax.set_xticklabels()
     # ax.set_yticklabels([])
     ax.set_xlabel('Lon (m)')

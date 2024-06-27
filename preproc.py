@@ -28,6 +28,7 @@ import calc_semivariograms as cs
 import time 
 import shutil
 import timeout_decorator
+import Initial_location_plot as ILP
 from difflib import SequenceMatcher
 
 
@@ -118,6 +119,11 @@ class deformation_and_noise:
                             print('I cant seem to pull this data?')
             else:
                 self.geoc_path, self.gacos_path = self.data_block.pull_frame_coseis()
+        
+        # try:
+      
+        # except:
+        #     pass
 
         print('INITIAL DATA PULL HAS BEEN COMPLETED')
         self.check_data_pull()
@@ -171,7 +177,11 @@ class deformation_and_noise:
         print(self.geoc_path)
         print("################### CONVERTING LICS TIFS TO BINARY! ####################")
         ml_attempt = 0 # adding in due to error in pull causing this to break in 1/10
-
+        try:
+            self.plot_location_and_frames()
+        except Exception as e:
+            print(e)
+            
         self.geoc_ml_path = self.create_geoc_ml()
         ml_attempt = 10 
    
@@ -295,7 +305,13 @@ class deformation_and_noise:
         length = int(LiCS_lib.get_param_par(slc_mli_par_path, 'azimuth_lines'))
         ifgm = LiCS_lib.read_img(path_unw,length,width)
         return ifgm, length, width
-    
+    def plot_location_and_frames(self):
+
+        poly_list = [] 
+        for geoc in self.geoc_path:
+            print(geoc)
+            poly_list.append(glob.glob(geoc+'/*-poly.txt'))  
+        ILP.location_plot(self.event_object.event_file_path,poly_list,os.path.join(self.event_object.GBIS_location,'location_and_active_frames_plot.png'))
     def remove_poor_ifgms(self,geoc_ml_path,geoc_clipped_path,co_thresh,coverage):
         """
         Applies ifgm checks based on LiCSBAS step 11
@@ -828,6 +844,50 @@ class deformation_and_noise:
             else:
                 pass
         return 
+    def flush_for_second_run(self):
+
+        if self.geoc_clipped_path:
+            self.flush_geoc(self.geoc_clipped_path)
+            self.geoc_clipped_path = [] 
+
+        if self.geoc_masked_path:
+            self.flush_geoc(self.geoc_masked_path)
+            self.geoc_masked_path = [] 
+
+        if self.geoc_masked_signal:
+            self.flush_geoc(self.geoc_masked_signal)
+            self.geoc_masked_signal = [] 
+
+        if self.geoc_ds_path:
+            self.flush_geoc(self.geoc_ds_path)
+            self.geoc_ds_path = [] 
+
+        if self.geoc_QA_path:
+            self.flush_geoc(self.geoc_QA_path)
+            self.geoc_QA_path = [] 
+
+        if self.geoc_final_path:
+            self.flush_geoc(self.geoc_final_path)
+            self.geoc_final_path = [] 
+
+        files = glob.glob(self.event_object.GBIS_location + '/*')
+        for f in files:
+            if os.path.isfile(f):
+                os.remove(f)
+            elif os.path.isdir(f):
+                shutil.rmtree(f)
+        
+        if os.path.isfile(self.event_object.GBIS_insar_template_NP1):
+            pass 
+        else: 
+            shutil.copy("./example_GBIS_input.inp",self.event_object.GBIS_insar_template_NP1)
+        
+        if os.path.isfile(self.event_object.GBIS_insar_template_NP2):
+            pass 
+        else: 
+            shutil.copy("./example_GBIS_input.inp",self.event_object.GBIS_insar_template_NP2)
+
+        return
 
     def flush_processing(self):
         # if self.geoc_path:
@@ -892,7 +952,7 @@ class deformation_and_noise:
         for directory in directories:
             # print(directory)
             if 'GEOC' in directory or 'GACOS' in directory: 
-                shutil.rmtree(os.path.join(self.event_object.LiCS_locations,directory))
+                shutil.rmtree(os.path.join(self.event_object.LiCS_locations,directory),ignore_errors=True)
         self.geoc_QA_path = [] 
         self.geoc_ds_path = [] 
         self.geoc_masked_signal = [] 

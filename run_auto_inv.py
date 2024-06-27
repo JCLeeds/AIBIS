@@ -48,6 +48,8 @@ import datetime
 import local2llh as l2llh
 import GBIS_run as GR 
 import shutil 
+import gc
+import generate_final_report as gfr
 
 @timeout_decorator.timeout(10800) # Times out after 6 hours 
 def main(USGS_ID):
@@ -59,26 +61,33 @@ def main(USGS_ID):
     # try:
     print('RUNNING AGAIN ')
     # with open(full_test[ii]+'_preproc.pkl', 'wb') as outp:
-    preproc_object = DaN.deformation_and_noise(USGS_ID,
-                                            target_down_samp=1000,
-                                            inv_soft='GBIS',
-                                            look_for_gacos=True,
-                                            # NP=2,
-                                            all_coseis=True,
-                                            single_ifgm=False,
-                                            coherence_mask=0.1,
-                                            min_unw_coverage=0.3, 
-                                            pygmt=True,
-                                            # date_primary=20200531,
-                                            # date_secondary=20200718,
-                                            # frame=Frame,
-                                            scale_factor_mag=0.075,
-                                            scale_factor_depth=0.075,
-                                            scale_factor_clip_mag=0.25,
-                                            scale_factor_clip_depth=0.0055,
-                                            loop_processing_flow=True
-                                            )
-    preproc_object_copy = preproc_object
+    preproc_one_attempt = 0
+    while preproc_one_attempt < 2:
+        try:
+            preproc_object = DaN.deformation_and_noise(USGS_ID,
+                                                            target_down_samp=1000,
+                                                            inv_soft='GBIS',
+                                                            look_for_gacos=True,
+                                                            # NP=2,
+                                                            all_coseis=True,
+                                                            single_ifgm=False,
+                                                            coherence_mask=0.1,
+                                                            min_unw_coverage=0.3, 
+                                                            pygmt=True,
+                                                            # date_primary=20200531,
+                                                            # date_secondary=20200718,
+                                                            # frame=Frame,
+                                                            scale_factor_mag=0.075,
+                                                            scale_factor_depth=0.075,
+                                                            scale_factor_clip_mag=0.25,
+                                                            scale_factor_clip_depth=0.0055,
+                                                            loop_processing_flow=True
+                                                            )
+            preproc_one_attempt = 10
+        except:
+            preproc_one_attempt += 1
+
+    # preproc_object_copy = preproc_object
 
     GBIS_object = GR.auto_GBIS(preproc_object,'/home/ee18jwc/code/auto_inv/GBIS.location',NP=1,number_trials=1e5,
                                 pygmt=False,generateReport=True,location_search=False,limit_trials=False)
@@ -99,16 +108,16 @@ def main(USGS_ID):
     # else:
     #     pass
     shutil.copytree(preproc_object.event_object.LiCS_locations,preproc_object.event_object.LiCS_locations + '_USGS_location_used')
-    preproc_object.flush_all_processing()
+    preproc_object.flush_for_second_run()
     # preproc_object.geoc_path, preproc_object.gacos_path = preproc_object.data_block.pull_frame_coseis()
     # preproc_object.check_data_pull()
     # preproc_object.geoc_path =  preproc_object.check_geoc_has_data(preproc_object.geoc_path)
     attempt = 0
     while attempt < 8: # incase data is pulled incorrectly or copied wrong
         try:
-            preproc_object.geoc_path, preproc_object.gacos_path = preproc_object.data_block.pull_frame_coseis()
-            preproc_object.check_data_pull()
-            preproc_object.geoc_path =  preproc_object.check_geoc_has_data(preproc_object.geoc_path)
+            # preproc_object.geoc_path, preproc_object.gacos_path = preproc_object.data_block.pull_frame_coseis()
+            # preproc_object.check_data_pull()
+            # preproc_object.geoc_path =  preproc_object.check_geoc_has_data(preproc_object.geoc_path)
             # flush_all_processing
             preproc_object.run_processing_flow(True)
             preproc_object.geoc_final_path = preproc_object.geoc_ds_path
@@ -151,6 +160,13 @@ def main(USGS_ID):
         print(e)
         pass 
 
+    try:
+        GBIS_Area_path = './' + USGS_ID + '_GBIS_area'
+        GBIS_res_1 = './'+ USGS_ID + '_NP1'
+        GBIS_res_2 = './'+ USGS_ID + '_NP2'
+        gfr.generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,USGS_ID)
+    except Exception as e:
+        print(e)
 
     shutil.rmtree(preproc_object.event_object.LiCS_locations)
     shutil.rmtree(preproc_object.event_object.LiCS_locations + '_USGS_location_used')
@@ -163,6 +179,8 @@ def main(USGS_ID):
 if __name__ == '__main__':
     # array = ['us6000a8nh']
     df = pd.read_csv('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/gCent_Catalog_no_header_info.csv')
+    df_land = pd.read_csv('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/test_set_on_land.csv')
+
     df_china = df[df['Location'] == 'China']
     df_Iran = df[df['Location'] == 'Iran']
     df_turkey = df[df['Location'] == 'Turkey']
@@ -179,18 +197,7 @@ if __name__ == '__main__':
     
     # full_test = ['us70006sj8']
 
-    full_test = [
-                'us6000b26j',
-                'us6000ddge',
-                'us6000dxge',
-                'us6000dyuk',
-                'us6000jk0t',
-                'us6000kynh',
-                'us6000mjpj',
-                'us7000abmk',
-                'us7000cet5',
-                'us7000fu12',
-                'us7000gebb',
+    full_test = ['us7000gebb',
                 'us60007anp',
                 'us7000df40',
                 'us6000bdq8',
@@ -200,17 +207,41 @@ if __name__ == '__main__':
                 'us600068w0',
                 'us7000m3ur',
                 'us6000a8nh',
-
+                'us7000mpe2',
+                'us7000lt1i',
+                'us6000b26j',
+                'us6000ddge',
+                'us7000mbuv',
+                'us6000dxge',
+                'us6000dyuk',
+                'us6000jk0t',
+                'us6000kynh',
+                'us6000mjpj',
+                'us7000abmk',
+                'us7000cet5',
+                'us7000fu12',
+               
     ]
     failed_tests = [] 
-    full_test = full_test + list(df_china.ComCatID)+ list(df_Iran.ComCatID) + list(df_turkey.ComCatID) +list(df_pakist.ComCatID) 
+    full_test = full_test + list(df_china.ComCatID)+ list(df_Iran.ComCatID) + list(df_turkey.ComCatID) +list(df_pakist.ComCatID) + list(df_land.id)
     # full_test = []
     # full_test = ['us70008cld','us6000jk0t']
     # full_test = ['us6000jk0t']
+    # full_test =   ['us7000gebb']
+    # full_test = ['us6000jk0t']
+    # full_test = ['us7000mpe2','us7000lt1i', 'us6000b26j',]
+    # full_test = ['us6000jk0t']
+    full_test = ['us7000gebb']
     for ii in range(len(full_test)):
         try:
             main(full_test[ii])
+            gc.collect()
         except Exception as e: 
             print(e)
-            print(full_test[ii])
+            try:
+                main(full_test[ii])
+            except:
+                pass
+            
+        #     print(full_test[ii])
         #     failed_tests.append(full_test[ii])

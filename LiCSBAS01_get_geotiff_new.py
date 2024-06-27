@@ -224,6 +224,12 @@ def main(argv=None,auto=None,single_date=None):
     url = os.path.join(LiCSARweb, trackID, frameID, 'metadata', 'metadata.txt')
     tools_lib.download_data(url, 'metadata.txt')
 
+    print('Download poly.txt', flush=True)
+    url = os.path.join(LiCSARweb, trackID, frameID, 'metadata', frameID +'-poly.txt')
+    print(url)
+    tools_lib.download_data(url, frameID +'-poly.txt')
+
+
     print('', flush=True)
 
 

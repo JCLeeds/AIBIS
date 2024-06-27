@@ -50,6 +50,7 @@ import glob
 import output_location_comp as olc
 
 
+
 class auto_GBIS:
     def __init__(self,deformation_and_noise_object,GBIS_loc,NP=1,number_trials=1e6,pygmt=True,generateReport=True,location_search=False,limit_trials=False):
         # old_stdout = sys.stdout
@@ -96,7 +97,7 @@ class auto_GBIS:
         self.opt_model, self.GBIS_lon, self.GBIS_lat = self.gbisrun()
         # self.plot_locations()
         self.create_catalog_entry(NP)
-        self.create_beachball_InSAR()
+        self.create_beachball_InSAR(NP)
        
 
         if pygmt is False:
@@ -401,8 +402,8 @@ class auto_GBIS:
         
         # if -dip1 - 30 < -90:
         #     dip1 = 0 
-        dip1_lower = -dip1 - 30
-        dip2_lower = -dip2 - 30
+        dip1_lower = -dip1 - 22.5
+        dip2_lower = -dip2 - 22.5
         if dip1_lower < -89.9:
             dip1_lower = -89.9 
         if dip2_lower < -89.9:
@@ -410,8 +411,8 @@ class auto_GBIS:
 
         
                 # Capping dip at 15 deg this removes convergance to a non physically shallow dipping source, This will need revisiting.
-        dip1_upper = -dip1 + 30
-        dip2_upper = -dip2 + 30
+        dip1_upper = -dip1 + 22.5
+        dip2_upper = -dip2 + 22.5
         if dip1_upper > -1:
             dip1_upper = -5 
         if dip2_upper > -1:
@@ -429,10 +430,10 @@ class auto_GBIS:
         
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  " + str(strike2))
 
-        strike_upper1 = (strike1 + 65)  % 360 
-        strike_upper2 = (strike2 + 65) % 360 
-        strike_lower1 = (strike1 - 65) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
-        strike_lower2 = (strike2 - 65) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
+        strike_upper1 = (strike1 + 75)  % 360 
+        strike_upper2 = (strike2 + 75) % 360 
+        strike_lower1 = (strike1 - 75) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
+        strike_lower2 = (strike2 - 75) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
 
         if strike_upper1 == 0:
             strike_upper1 = strike_upper1 + 360 
@@ -915,7 +916,45 @@ class auto_GBIS:
             for image in images:
                 shutil.copy(image,final_path)
 
-                # final_path = self.DaN_object.geoc_final_path[ii] + "_INVERSION_Results"
+        if isinstance(self.DaN_object.geoc_QA_path,list):
+            for ii in range(len(self.DaN_object.geoc_QA_path)):
+                semivarigram_dir = self.DaN_object.geoc_QA_path[ii] +'/semivariograms'
+                network_png = self.DaN_object.geoc_QA_path[ii] +'/network/network11.png'
+                info_txt =   self.DaN_object.geoc_QA_path[ii] +'/info/11ifg_stats.txt'
+                final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_final_path[ii].split('/')[-1].split('floatml')[0] + "processing_report_NP" + str(NP))
+                semivariograms = glob.glob(semivarigram_dir + "/*.png")
+                 
+                if os.path.isdir(final_path):
+                    pass 
+                else:
+                    os.mkdir(final_path)
+
+                for grams in semivariograms:
+                    print(grams)
+                    shutil.copy(grams,final_path)
+                shutil.copy(network_png,final_path)
+                shutil.copy(info_txt,final_path)
+        else:
+            semivarigram_dir = self.DaN_object.geoc_QA_path +'/semivariograms/'
+            network_png = self.DaN_object.geoc_QA_path +'/network/network11.png'
+            info_txt =   self.DaN_object.geoc_QA_path +'/info/11ifg_stats.txt'
+            final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_final_path[ii].split('/')[-1].split('floatml')[0] + "processing_report_NP" + str(NP))
+
+            semivariograms = glob.glob(semivarigram_dir + "*.png")
+                
+            if os.path.isdir(final_path):
+                pass 
+            else:
+                os.mkdir(final_path)
+
+            for grams in semivariograms:
+                print(grams)
+                shutil.copy(grams,final_path)
+
+            shutil.copy(network_png,final_path)
+            shutil.copy(info_txt,final_path)
+
+
 
     @timeout_decorator.timeout(3600)
     def gmt_output(self,NP):
@@ -1095,11 +1134,11 @@ class auto_GBIS:
         sp.check_call(["./plot_locations.sh",tifs[0],locations,self.path_to_data])
     
     
-    def create_beachball_InSAR(self):
+    def create_beachball_InSAR(self,NP):
         from obspy.imaging.beachball import beachball 
-        strike = self.opt_model[4] - 180 
-        if strike < 360:
-                strike  = strike + 360
+        strike = self.opt_model[4] + 180 
+        if strike > 360:
+                strike  = strike - 360
         Dip = -self.opt_model[3]
         SS = self.opt_model[7]
         DS = self.opt_model[8]
@@ -1108,7 +1147,7 @@ class auto_GBIS:
         figure.suptitle('InSAR Fault Mechanism  strike: ' + str(strike)+' Dip: ' + str(Dip) + ' Rake: ' + str(rake))
         mt = [strike,Dip,rake]
         beachball(mt,size=200,linewidth=2,facecolor='r',fig=figure)
-        figure.savefig(os.path.join(self.outputdir,self.DaN_object.event_object.ID+'_InSAR_beachball.png'))
+        figure.savefig(os.path.join(self.path_to_data,self.DaN_object.event_object.ID+'_InSAR_beachball_NP' +str(NP)+'.png'))
         return 
 if __name__ == "__main__":
     # # example event ID's us6000jk0t, us6000jqxc, us6000kynh,

@@ -93,6 +93,9 @@ import SCM
 import LiCSBAS_io_lib as io_lib
 import LiCSBAS_tools_lib as tools_lib
 import LiCSBAS_plot_lib as plot_lib
+import mosiac_images as mi
+from PIL import Image
+import pylab as plt 
 
 class Usage(Exception):
     """Usage context manager"""
@@ -193,10 +196,12 @@ def main(argv=None,auto=None):
 
 
     #%% ENU
+    gdal.AllRegister()
     for ENU in ['E', 'N', 'U']:
         print('\nCreate {}'.format(ENU+'.geo'), flush=True)
         enutif = glob.glob(os.path.join(geocdir, '*.geo.{}.tif'.format(ENU)))
-
+        print('~~~~~~~~~~~~~~~~~~~BREAKING HERE~~~~~~~~~~~~~~~~~~~~~~~~~')
+        print(enutif)
         ### Download if not exist
         if len(enutif)==0:
             print('  No *.geo.{}.tif found in {}'.format(ENU, os.path.basename(geocdir)), flush=True)
@@ -294,6 +299,30 @@ def main(argv=None,auto=None):
         p = q.Pool(n_para)
         rc = p.map(convert_wrapper, range(n_ifg2))
         p.close()
+
+        # image_list = []
+        # for ifgix, ifgd in enumerate(ifgdates2): 
+        #     out_dir1 = os.path.join(out_dir, ifgd)
+        #     unwfile_c = os.path.join(out_dir1, ifgd+'.unw')
+        #     if os.path.isfile(unwfile_c):
+        #         image_list.append(np.asarray(Image.open(unwfile_c + '.png')))
+        #     print(image_list)
+        #     # dates_list_title.append(ifgd)
+
+        # if len(image_list) > 3:
+        #     num_cols = 3
+        # else:
+        #     num_cols = len(image_list)
+
+        # figure = mi.show_image_list(list_images=image_list, 
+        #             list_titles=None,
+        #             num_cols=num_cols,
+        #             figsize=(50, 50),
+        #             grid=False,
+        #             title_fontsize=10)
+
+        # figure.savefig(os.path.join(out_dir,'All_ifgms_easy_look_up_raw.png'),bbox_inches='tight')
+        # plt.close('all')
         
         ifgd_ok = []
         for i, _rc in enumerate(rc):
@@ -409,6 +438,7 @@ def main(argv=None,auto=None):
     print('\n{} Successfully finished!!\n'.format(os.path.basename(argv[0])))
     print('Output directory: {}\n'.format(os.path.relpath(outdir)))
 
+    
 
 #%%
 def convert_wrapper(i):

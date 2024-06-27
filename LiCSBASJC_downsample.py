@@ -30,6 +30,9 @@ import shapely
 from shapely.geometry import Polygon
 import time 
 import downsamp as ds 
+import mosiac_images as mi
+from PIL import Image
+import pylab as plt 
 
 class Usage(Exception):
     """Usage context manager"""
@@ -161,6 +164,30 @@ def main(geoc_ml_path,output_geoc_ml_path,rad,center,new_points,argv=None,stacke
 
         print('\n{} Successfully finished!!\n'.format(os.path.basename(argv[0])))
         print('Output directory: {}\n'.format(os.path.relpath(out_dir)))
+        image_list = []
+        for ifgix, ifgd in enumerate(ifgdates2): 
+            out_dir1 = os.path.join(out_dir, ifgd)
+            png_regular_unw = os.path.join(out_dir1, ifgd+ '.regular_unw.png')
+
+            if os.path.isfile(png_regular_unw):
+                image_list.append(np.asarray(Image.open(png_regular_unw)))
+                print(image_list)
+        # dates_list_title.append(ifgd)
+
+        if len(image_list) > 3:
+            num_cols = 3
+        else:
+            num_cols = len(image_list)
+
+        figure = mi.show_image_list(list_images=image_list, 
+                    list_titles=None,
+                    num_cols=num_cols,
+                    figsize=(50, 50),
+                    grid=False,
+                    title_fontsize=10)
+
+        figure.savefig(os.path.join(out_dir,'All_ifgms_easy_look_up_downsamp.png'),bbox_inches='tight')
+        plt.close('all')
 
         
 def mask_downsampler(ifgix):
@@ -223,9 +250,9 @@ def mask_downsampler(ifgix):
 
     ## Output png for masked unw
     
-    pngfile_Inc = os.path.join(out_dir1, '.Inc.png')
-    pngfile_Head = os.path.join(out_dir1, '.Head.png')
-    png_regular_unw = os.path.join(out_dir1, '.regular_unw.png')
+    pngfile_Inc = os.path.join(out_dir1, ifgd+ '.Inc.png')
+    pngfile_Head = os.path.join(out_dir1, ifgd+ '.Head.png')
+    png_regular_unw = os.path.join(out_dir1, ifgd+ '.regular_unw.png')
 
 
     # title = '{} ({}pi/cycle)'.format(ifgd, cycle*2)
@@ -235,7 +262,7 @@ def mask_downsampler(ifgix):
     print("done 2 ")
     plot_lib.make_scatter_png(Lon,Lat,Heading, pngfile_Head, cmap_wrap, "Heading",cbar=True)
     print("done 3")
-    plot_lib.make_scatter_png(Lon,Lat,unw, png_regular_unw, cmap_wrap, "Displacement (radians)",cbar=True)
+    plot_lib.make_scatter_png(Lon,Lat,unw, png_regular_unw, cmap_wrap, "Displacement (radians)",cbar=True,downsamp=True)
     Frame_identifier = in_dir.split('/')[-1]
 
     
