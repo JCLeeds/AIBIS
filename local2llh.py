@@ -68,3 +68,7 @@ def local2llh(xy, origin):
 
 
 
+if __name__ == '__main__':
+   llh = local2llh([[-8.78396],[2.06516]],[29.690,65.379])
+  
+   print(llh)

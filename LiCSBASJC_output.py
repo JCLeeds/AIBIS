@@ -26,7 +26,6 @@ import shutil
 import glob
 import pygmt
 from importlib import reload
-import pylab as plt 
 try:
     import h5py
 except ImportError as e:
@@ -805,4 +804,4 @@ if __name__ == '__main__':
     print(depth)    # elif NP == 2:
     #     usgs_model = [ 0,0,strike2,dip2,rake2,slip,self.estimate_length,depth,self.estimate_length]
   
-    produce_final_GBISoutput(  geoc_ml_path,output_geoc_ml_path, opt_model, vertex_path, usgs_loc, usgs_model)
+    produce_final_GBISoutput( geoc_ml_path,output_geoc_ml_path, opt_model, vertex_path,usgs_loc, usgs_model)

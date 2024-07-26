@@ -75,6 +75,4 @@ def show_image_list(list_images, list_titles=None, list_cmaps=None, grid=True, n
         list_axes[i].set_visible(False)
 
     fig.tight_layout()
-    plt.close('all')
-
     return fig 

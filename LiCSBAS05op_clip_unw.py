@@ -254,24 +254,29 @@ def main(argv=None,auto=None,index_clip=False):
             continue  #not copy 
         elif os.path.getsize(file) == width*length*4: ##float file
             print('Clip {}'.format(os.path.basename(file)), flush=True)
+            print('CHEKER 1 ')
             data = io_lib.read_img(file, length, width)
             data = data[y1:y2, x1:x2]
             filename = os.path.basename(file)
             outfile = os.path.join(out_dir, filename)
             data.tofile(outfile)
         elif file==os.path.join(in_dir, 'slc.mli.png'):
+            print('CHEKER 2 ')
             print('Recreate slc.mli.png', flush=True)
             mli = io_lib.read_img(os.path.join(out_dir, 'slc.mli'), length_c, width_c)
             pngfile = os.path.join(out_dir, 'slc.mli.png')
             plot_lib.make_im_png(mli, pngfile, 'gray', 'MLI', cbar=False)
         elif file==os.path.join(in_dir, 'hgt.png'):
             print('Recreate hgt.png', flush=True)
+            print('CHEKER 3 ')
             hgt = io_lib.read_img(os.path.join(out_dir, 'hgt'), length_c, width_c)
             vmax = np.nanpercentile(hgt, 99)
             vmin = -vmax/3 ## bnecause 1/4 of terrain is blue
             pngfile = os.path.join(out_dir, 'hgt.png')
             plot_lib.make_im_png(hgt, pngfile, 'terrain', 'DEM (m)', vmin, vmax, cbar=True)
         else:
+            print('Checker 4 ')
+            print(file)
             print('Copy {}'.format(os.path.basename(file)), flush=True)
             shutil.copy(file, out_dir)
 

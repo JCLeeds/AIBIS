@@ -78,9 +78,6 @@ import SCM
 import LiCSBAS_io_lib as io_lib
 import LiCSBAS_tools_lib as tools_lib
 import LiCSBAS_plot_lib as plot_lib
-import mosiac_images as mi
-from PIL import Image
-import pylab as plt 
 
 class Usage(Exception):
     """Usage context manager"""
@@ -356,54 +353,6 @@ def main(argv=None,auto=None):
             print('Copy {}'.format(os.path.basename(file)), flush=True)
             shutil.copy(file, out_dir)
 
-    if circ_sig_mask is None:
-        image_list = []
-        dates_list_title = [] 
-        # J.C addition make mosiac for frame 
-        for ifgix, ifgd in enumerate(ifgdates2): 
-            out_dir1 = os.path.join(out_dir, ifgd)
-            unwfile_c = os.path.join(out_dir1, ifgd+'.unw')
-            image_list.append(np.asarray(Image.open(unwfile_c + '.png')))
-            dates_list_title.append(ifgd)
-
-        if len(image_list) > 3:
-            num_cols = 3
-        else:
-            num_cols = len(image_list)
-
-        figure = mi.show_image_list(list_images=image_list, 
-                    list_titles=None,
-                    num_cols=num_cols,
-                    figsize=(50, 50),
-                    grid=False,
-                    title_fontsize=10)
-        figure.savefig(os.path.join(out_dir,'All_ifgms_easy_look_up_coherence_masked.png'),bbox_inches='tight')
-        plt.close('all')
-    else: 
-        image_list = []
-        # dates_list_title = [] 
-        # J.C addition make mosiac for frame 
-        for ifgix, ifgd in enumerate(ifgdates2): 
-            out_dir1 = os.path.join(out_dir, ifgd)
-            unwfile_c = os.path.join(out_dir1, ifgd+'_signal_masked.unw')
-            if os.path.isfile(unwfile_c+'.png'):
-                image_list.append(np.asarray(Image.open(unwfile_c + '.png')))
-            # dates_list_title.append(ifgd)
-
-        if len(image_list) > 3:
-            num_cols = 3
-        else:
-            num_cols = len(image_list)
-
-        figure = mi.show_image_list(list_images=image_list, 
-                    list_titles=None,
-                    num_cols=num_cols,
-                    figsize=(50, 50),
-                    grid=False,
-                    title_fontsize=10)
-        figure.savefig(os.path.join(out_dir,'All_ifgms_easy_look_up_masked_signal_masked.png'),bbox_inches='tight')
-        plt.close('all')
-
         
 
     print('\nMasked area can be check in:')
@@ -417,6 +366,58 @@ def main(argv=None,auto=None):
     sec = int(np.mod(elapsed_time,60))
     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour,minite,sec))
 
+    print('\n{} Successfully finished!!\n'.format(os.path.basename(argv[0])))
+    print('Output directory: {}\n'.format(os.path.relpath(out_dir)))
+
+
+#%%
+def mask_wrapper(ifgix):
+    ifgd = ifgdates2[ifgix]
+    if np.mod(ifgix,100) == 0:
+        print("  {0:3}/{1:3}th unw...".format(ifgix, len(ifgdates2)), flush=True)
+
+    unwfile = os.path.join(in_dir, ifgd, ifgd+'.unw')
+    unw = io_lib.read_img(unwfile, length, width)
+    unw[unw==0] = np.nan
+        
+    ### Mask
+    unw[bool_mask] = np.nan
+
+    if cc_ifg_thre:
+        ccfile = os.path.join(in_dir, ifgd, ifgd+'.cc')
+        if os.path.getsize(ccfile) == length*width:
+            coh = io_lib.read_img(ccfile, length, width, np.uint8)
+            coh = coh.astype(np.float32)/255
+        else:
+            coh = io_lib.read_img(ccfile, length, width)
+            coh[np.isnan(coh)] = 0 # Fill nan with 0
+        unw[np.where(coh < cc_ifg_thre)] = np.nan
+
+    ### Output
+    out_dir1 = os.path.join(out_dir, ifgd)
+    if not os.path.exists(out_dir1): os.mkdir(out_dir1)
+    if circ_sig_mask is not None:
+        unw.tofile(os.path.join(out_dir1, ifgd+'_signal_masked.unw'))
+        pngfile = os.path.join(out_dir1, ifgd+'_signal_masked.unw.png')
+        shutil.copy(unwfile, os.path.join(out_dir,ifgd))
+
+    else:
+        unw.tofile(os.path.join(out_dir1, ifgd+'.unw'))
+        pngfile = os.path.join(out_dir1, ifgd+'.unw.png')
+
+    
+    if not os.path.exists(os.path.join(out_dir1, ifgd+'.cc')):
+        ccfile = os.path.join(in_dir, ifgd, ifgd+'.cc')
+        os.symlink(os.path.relpath(ccfile, out_dir1), os.path.join(out_dir1, ifgd+'.cc'))
+
+    ## Output png for masked unw
+
+   
+    title = '{} ({}pi/cycle)'.format(ifgd, cycle*2)
+    plot_lib.make_im_png(np.angle(np.exp(1j*unw/cycle)*cycle), pngfile, cmap_wrap, title, -np.pi, np.pi, cbar=False)
+
+
+    print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour,minite,sec))
     print('\n{} Successfully finished!!\n'.format(os.path.basename(argv[0])))
     print('Output directory: {}\n'.format(os.path.relpath(out_dir)))
 

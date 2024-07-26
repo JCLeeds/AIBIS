@@ -356,8 +356,11 @@ class USGS_event:
         L = np.cbrt(float(self.MTdict['moment'])/(slip_rate*mu))
         slip = L * slip_rate
         centroid_depth =  self.time_pos_depth['Depth'] * 1000 # setting depth as depth always too deep for MTDict
+       
+        # print(centroid_depth)
         width = L 
         length = L 
+        centroid_depth = centroid_depth + (width/2) * np.sin(np.deg2rad(dip)) 
         widths = []
         checker = False
         while checker is False:
@@ -405,17 +408,22 @@ class USGS_event:
                 widths.append(np.abs(np.max(yy_vec[index_V_above]) - np.min(yy_vec[index_V_above])))
 
             centroid_depth = centroid_depth - 1000
+            print(centroid_depth)
             if centroid_depth < 0:
                 centroid_depth = centroid_depth + 1000
-                widths.append((20001))
+                widths.append((111.13*0.75*1e3))
 
             if len(widths) == 0:
                 checker = False
-            elif len(widths) > 0 and np.max(np.array(widths))*1.5 > 20000:
+            elif len(widths) > 0:
                 checker = True 
+
             
-            if checker == True and np.max(np.array(widths))*1.5 > 111.13*1000:
-                return 111.13*1000
+            if checker == True and np.max(np.array(widths)) < (111.13*0.5*1e3/3):
+                widths =  [111.13*0.5*1e3/3]
+            
+            if checker == True and np.max(np.array(widths)) > (111.13*2*1e3)/3:
+                widths = [111.13*1*1e3/3]
             # checker = [x if len(widths)>0 else len(widths) == 0]
             # print(len)
             # print(checker)
@@ -423,10 +431,19 @@ class USGS_event:
         print(widths)
         print('mask width')
         print(str(np.max(np.array(widths))))
-        print('x1.5 for fudge factor')
-        print(str(np.max(np.array(widths)*1.5)))
+        print('x3 for fudge factor')
+        print(str(np.max(np.array(widths))*3))
+        print('Degrees')
+        print(str(np.max(np.array(widths))*3/(111.13*1e3)))
+        print('potentail Clip')
+        print(str(np.max(np.array(widths))*3*4/(111.13*1e3)))
+        print('slip')
+        print(str(slip))
+        print('length-width')
+        print(str(L))
+        
 
-        return np.max(np.array(widths))*1.5
+        return np.max(np.array(widths))*3
 
 
     def manual_input(self,strike,dip,rake,moment):

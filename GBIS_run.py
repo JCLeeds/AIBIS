@@ -79,8 +79,8 @@ class auto_GBIS:
         print(self.npzfiles)
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         self.GBIS_mat_file_location, self.sill_nug_range = self.convert_GBIS_Mat_format()
-        if limit_trials == True and len(self.GBIS_mat_file_location) > 5:
-            self.number_trials = number_trials/10
+        # if limit_trials == True and len(self.GBIS_mat_file_location) > 5:
+        #     self.number_trials = number_trials/10
 
         self.show_noise_params()
         self.path_to_GBIS = self.read_input(GBIS_loc)
@@ -91,7 +91,7 @@ class auto_GBIS:
         self.boundingbox = self.calc_boundingbox()
         self.create_insar_input()
         if location_search:
-            self.edit_input_priors_location_finding_run(NP=NP)
+            self.edit_input_priors_wide_seach(NP=NP)
         else:
             self.edit_input_priors(NP=NP)
         self.opt_model, self.GBIS_lon, self.GBIS_lat = self.gbisrun()
@@ -151,15 +151,15 @@ class auto_GBIS:
      
 
     def read_input(self,GBIS_loc):
-        alltext = [] 
-        f = open(GBIS_loc)
-        for line in f:
-            if line.startswith('#'):
-                continue 
-            else:
-                alltext.append(line)
-        path = alltext[0].strip('\n')
-        return path 
+        # alltext = [] 
+        # f = open(GBIS_loc)
+        # for line in f:
+        #     if line.startswith('#'):
+        #         continue 
+        #     else:
+        #         alltext.append(line)
+        # path = alltext[0].strip('\n')
+        return GBIS_loc
     
     def start_matlab_set_path(self):
         eng = matlab.engine.start_matlab()
@@ -185,7 +185,8 @@ class auto_GBIS:
             max_lons.append(np.max(self.data[ii]['lonlat'][:,0]))
             min_lons.append(np.min(self.data[ii]['lonlat'][:,0]))
         
-        boundingbox = [np.min(min_lons)+0.01,np.max(max_lats)-0.01,np.max(max_lons)-0.01,np.min(min_lats)+0.01]
+        # boundingbox = [round(np.max(min_lons),4)+0.0001,round(np.min(max_lats),4)-0.0001,round(np.min(max_lons),4)-0.0001,round(np.max(min_lats),4)+0.0001]
+        boundingbox = [np.max(min_lons),np.min(max_lats),np.min(max_lons),np.max(min_lats)]
         #    referance = [np.median(lics_mat['Lon']), np.median(lics_mat['Lat'])]
         return boundingbox
 
@@ -209,7 +210,7 @@ class auto_GBIS:
         for ii in range(len(self.data)):
             max_dists.append((np.sqrt((np.max(self.data[ii]['lonlat_m'][:,0]) - np.min(self.data[ii]['lonlat_m'][:,0])) ** 2
                                 + (np.max(self.data[ii]['lonlat_m'][:,1]) - np.max(self.data[ii]['lonlat_m'][:,1])) ** 2)))
-        max_dist = np.mean(max_dists)
+        max_dist = np.min(max_dists) # edited from mean to min 
             
         return max_dist
     
@@ -259,75 +260,79 @@ class auto_GBIS:
         # insar{insarID}.nugget =2.991728653751577e-06
         # insar{insarID}.quadtreeThresh = 0; % Quadtree threshold variance (e.g., 0.01^2 m or 1e-04 m)
         # with open(input_loc,'r') as file:
-        if len(self.GBIS_mat_file_location) > 10:
-            frame_info = [] 
-            tbaselines = [] 
-            index = []
-            matfile_locations = [] 
-            data_df = {'frame':None,
-                        'tbl':None,
-                        'index':None}
-            with open(self.DaN_object.event_object.event_file_path,'r') as file:
-                params = file.readlines()
-            time = params[1].split('=')[-1]
-            for ii in range(len(self.GBIS_mat_file_location)):
-                frame = self.GBIS_mat_file_location[ii].split('/')[-1].split('_floatml_')[0].replace('GEOC_', '')
-                date_primary, date_secondary = self.GBIS_mat_file_location[ii].split('/')[-1].split('_QAed_')[-1].split('.')[0].split('_')[0],self.GBIS_mat_file_location[ii].split('/')[-1].split('_QAed_')[-1].split('.')[0].split('_')[1]
-                print(date_primary)
-                print(date_secondary)
-                print(frame)
-                print(date_primary[0:4], date_primary[4:6], date_primary[6:8])
-                date_primary = datetime.datetime(int(date_primary[0:4]), int(date_primary[4:6]), int(date_primary[6:8]))
-                print(date_secondary[0:4], date_secondary[4:6], date_secondary[6:8])
-                date_secondary = datetime.datetime(int(date_secondary[0:4]), int(date_secondary[4:6]), int(date_secondary[6:8]))
-               
-                print(date_secondary - date_primary)
-                tbaselines.append(date_secondary - date_primary)
-                frame_info.append(frame)
-                index.append(ii) 
+        # if len(self.GBIS_mat_file_location) > 10:
+        frame_info = [] 
+        tbaselines = [] 
+        index = []
+        primary_dates = [] 
+        secondary_dates = []
+        matfile_locations = [] 
+        data_df = {'frame':None,
+                    'tbl':None,
+                    'index':None}
+        with open(self.DaN_object.event_object.event_file_path,'r') as file:
+            params = file.readlines()
+        time = params[1].split('=')[-1]
+        for ii in range(len(self.GBIS_mat_file_location)):
+            frame = self.GBIS_mat_file_location[ii].split('/')[-1].split('_floatml_')[0].replace('GEOC_', '')
+            date_primary, date_secondary = self.GBIS_mat_file_location[ii].split('/')[-1].split('_QAed_')[-1].split('.')[0].split('_')[0],self.GBIS_mat_file_location[ii].split('/')[-1].split('_QAed_')[-1].split('.')[0].split('_')[1]
+            print(date_primary)
+            print(date_secondary)
+            print(frame)
+            print(date_primary[0:4], date_primary[4:6], date_primary[6:8])
+            date_primary = datetime.datetime(int(date_primary[0:4]), int(date_primary[4:6]), int(date_primary[6:8]))
+            print(date_secondary[0:4], date_secondary[4:6], date_secondary[6:8])
+            date_secondary = datetime.datetime(int(date_secondary[0:4]), int(date_secondary[4:6]), int(date_secondary[6:8]))
+            
+            print(date_secondary - date_primary)
+            tbaselines.append(date_secondary - date_primary)
+            frame_info.append(frame)
+            primary_dates.append(date_primary)
+            secondary_dates.append(secondary_dates)
+            index.append(ii) 
 
-            data_df['frame'] = frame_info
-            data_df['tbl'] = tbaselines
-            data_df['index'] = index
-            print(data_df)
-            data_df = pd.DataFrame.from_dict(data_df)
+        data_df['frame'] = frame_info
+        data_df['primary_date'] = primary_dates
+        data_df['secondary_date'] = secondary_dates
+        data_df['tbl'] = tbaselines
+        data_df['index'] = index
+        print(data_df)
+        data_df = pd.DataFrame.from_dict(data_df)
 
-            total_frames =  list(set(frame_info))
+        total_frames =  list(set(frame_info))
 
-            index_to_keep = [] 
-            for frame in total_frames: 
-                frame_df = data_df[data_df['frame'] == frame]
-                # print(frame_df)
-                # print(frame_df[frame_df.tbl == frame_df.tbl.min()]['index'])
+        index_to_keep = [] 
+        for frame in total_frames: 
+            frame_df = data_df[data_df['frame'] == frame]
+            if len(frame_df) > 2 and len(frame) > 3:
                 index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.min()].index.values)
-
-                if len(frame_df) > 1:
-                    index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(2).iloc[-1]].index.values)
-                else:
-                    pass
-
-            print(index_to_keep)
-            final_indexs = []
-            for index_list in index_to_keep:
-                for ii in range(len(index_list)):
-                    final_indexs.append(int(index_list[ii]))
-            final_indexs = np.unique(np.array(final_indexs,dtype=int))
-            print(final_indexs)
-            # self.GBIS_mat_file_location = np.array(self.GBIS_mat_file_location)[final_indexs]
-            # self.sill_nug_range = np.array(self.sill_nug_range)[final_indexs][:]
-
-            if os.path.isfile(self.path_to_data + '/ifgms_used_in_inversion.txt'):
-                os.remove(self.path_to_data + '/ifgms_used_in_inversion.txt')
+            elif len(frame_df) > 2 and len(frame) > 1:
+                index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.min()].index.values)
+                index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(2).iloc[-2]].index.values)
+                # index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(3).iloc[-1]].index.values)
+                # index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(4).iloc[-1]].index.values)
             else:
-                pass
-            with open(self.path_to_data + '/ifgms_used_in_inversion.txt','w') as file:
-                for index in final_indexs:
-                    file.write( str(index) + 'file: ' +  self.GBIS_mat_file_location[index] + '\n')
+                index_to_keep.append(frame_df.index.values)
+
+        print(index_to_keep)
+        final_indexs = []
+        for index_list in index_to_keep:
+            for ii in range(len(index_list)):
+                final_indexs.append(int(index_list[ii]))
+        final_indexs = np.unique(np.array(final_indexs,dtype=int))
+        print(final_indexs)
+        # self.GBIS_mat_file_location = np.array(self.GBIS_mat_file_location)[final_indexs]
+        # self.sill_nug_range = np.array(self.sill_nug_range)[final_indexs][:]
+
+        if os.path.isfile(self.path_to_data + '/ifgms_used_in_inversion.txt'):
+            os.remove(self.path_to_data + '/ifgms_used_in_inversion.txt')
+        else:
+            pass
+        with open(self.path_to_data + '/ifgms_used_in_inversion.txt','w') as file:
+            for index in final_indexs:
+                file.write( str(index) + 'file: ' +  self.GBIS_mat_file_location[index] + '\n')
+        
             
-            
-
-
-
         with open(input_loc,'r') as file:
             lines = file.readlines() 
         #     file.readlines() 
@@ -392,11 +397,11 @@ class auto_GBIS:
         # L = 8000
         slip = L*slip_rate
 
-        DS1 = np.cos(rake1*np.pi/180) * slip 
-        SS1 = np.sin(rake1*np.pi/180) * slip
+        DS1 = np.sin(rake1*np.pi/180) * slip 
+        SS1 = np.cos(rake1*np.pi/180) * slip
 
-        DS2 = np.cos(rake2*np.pi/180) * slip 
-        SS2 = np.sin(rake2*np.pi/180) * slip
+        DS2 = np.sin(rake2*np.pi/180) * slip 
+        SS2 = np.cos(rake2*np.pi/180) * slip
 
 
         
@@ -461,8 +466,8 @@ class auto_GBIS:
         else:
             strike2 = (strike_lower2 + strike_upper2) /2
 
-        if depth*0.25 <= 1000:
-            depth_lower = 1 
+        if depth*0.25 <= 2500:
+            depth_lower = depth*0.1
         else:
             depth_lower = depth*0.25
 
@@ -542,14 +547,14 @@ class auto_GBIS:
                 #     strike_bound = strike_upper2
                 lines[ii] = ('modelInput.fault.lower=['
                             + str(int(self.estimate_length*0.5)) + ';  ' 
-                            + str(int(self.estimate_length*0.5)) + ';  '
+                            + str(int(self.estimate_length*0.25)) + ';  '
                             + str(int(depth_lower)) + ';  '
                             + str(dip2_lower) + ';  '
                             + str(int(strike_lower2)) + ';  '
                             + str(int(-self.max_dist/4)) + ';  '
                             + str(int(-self.max_dist/4)) + ';  '
-                            + str(SS2 - 4) + ';  '
-                            + str(DS2 - 4) + '];'
+                            + str(SS2 - 5) + ';  '
+                            + str(DS2 - 5) + '];'
                             '\n'
                             )
                 print(lines[ii])
@@ -560,14 +565,14 @@ class auto_GBIS:
                 #     strike_bound = strike_upper1
                 lines[ii] = ('modelInput.fault.upper=['
                             + str(int(self.estimate_length*2.5)) + ';  ' 
-                            + str(int(self.estimate_length*2.5)) + ';  '
-                            + str(int(depth*3)) + ';  '
+                            + str(int(self.estimate_length*5)) + ';  '
+                            + str(int(depth*2)) + ';  '
                             + str(int(dip1_upper)) + ';  '
                             + str(int(strike_upper1)) + ';  '
                             + str(int(self.max_dist/4)) + ';  '
                             + str(int(self.max_dist/4)) + ';  '
-                            + str(SS1 + 4) + ';  '
-                            + str(DS1 + 4) + '];'
+                            + str(SS1 + 5) + ';  '
+                            + str(DS1 + 5) + '];'
                             '\n'
                             ) 
                 print(lines[ii])
@@ -578,14 +583,14 @@ class auto_GBIS:
                 #     strike_bound = strike_upper2
                 lines[ii] = ('modelInput.fault.upper=['
                             + str(int(self.estimate_length*2.5)) + ';  ' 
-                            + str(int(self.estimate_length*2.5)) + ';  '
-                            + str(int(depth*3)) + ';  '
+                            + str(int(self.estimate_length*5)) + ';  '
+                            + str(int(depth*2)) + ';  '
                             + str(int(dip2_upper)) + ';  '
                             + str(int(strike_upper2)) + ';  '
                             + str(int(self.max_dist/4)) + ';  '
                             + str(int(self.max_dist/4)) + ';  '
-                            + str(SS2 + 4) + ';  '
-                            + str(DS2 + 4) + '];'
+                            + str(SS2 + 5) + ';  '
+                            + str(DS2 + 5) + '];'
                             '\n'
                             ) 
                 print(lines[ii])
@@ -805,7 +810,169 @@ class auto_GBIS:
         with open(input_loc, 'w') as file:
             file.writelines(lines)
         return
+    def edit_input_priors_wide_seach(self,NP=1):
+        input_loc = self.GBIS_input_loc
+
+        with open(self.DaN_object.event_object.event_file_path,'r') as file:
+            params = file.readlines()
+  
+        name = params[0].split('=')[-1]
+        time = params[1].split('=')[-1]
+        latitude = float(params[2].split('=')[-1])
+        longitude = float(params[3].split('=')[-1])
+        magnitude = float(params[4].split('=')[-1])
+        magnitude_type = params[5].split('=')[-1]
+        moment = float(params[6].split('=')[-1])
+        depth = float(params[7].split('=')[-1])
+        catalog = params[8].split('=')[-1]
+        strike1 = float(params[9].split('=')[-1])
+        dip1 = float(params[10].split('=')[-1])
+        rake1 = float(params[11].split('=')[-1])
+        strike2 = float(params[12].split('=')[-1])
+        dip2 = float(params[13].split('=')[-1])
+        rake2 = float(params[14].split('=')[-1]) 
+
+        slip_rate=5.5e-5
+        mu = 3.2e10
+        L = self.estimate_length
     
+        # L = 8000
+        slip = L*slip_rate
+
+        DS1 = np.sin(rake1*np.pi/180) * slip 
+        SS1 = np.cos(rake1*np.pi/180) * slip
+
+        DS2 = np.sin(rake2*np.pi/180) * slip 
+        SS2 = np.cos(rake2*np.pi/180) * slip
+
+        if depth*0.25 <= 1000:
+            depth_lower = 1 
+        else:
+            depth_lower = depth*0.1
+
+        with open(input_loc,'r') as file:
+            lines = file.readlines() 
+        for ii in range(len(lines)):
+            # print(lines[ii])
+            if 'geo.referencePoint' in lines[ii]:
+                lines[ii] = ('geo.referencePoint =['
+                    + str(self.DaN_object.event_object.time_pos_depth['Position'][1]) + ";"
+                    + str(self.DaN_object.event_object.time_pos_depth['Position'][0]) + "];" + '\n')
+            elif 'geo.boundingBox' in lines[ii]:
+                lines[ii] = ('geo.boundingBox =[' 
+                            + str(self.boundingbox[0]) + ";" 
+                            + str(self.boundingbox[1]) + ";"
+                            + str(self.boundingbox[2]) + ";" 
+                            + str(self.boundingbox[3]) + "];" '\n')
+                            
+            elif 'modelInput.fault.start' in lines[ii] and NP==1:
+                lines[ii] = ('modelInput.fault.start=['
+                            + str(int(self.estimate_length)) + ';  ' 
+                            + str(int(self.estimate_length)) + ';  '
+                            + str(int(depth)) + ';  '
+                            + str(int(-dip1)) + ';  '
+                            + str(int(strike1)) + ';  '
+                            + str(0) + ';  '
+                            + str(0) + ';  '
+                            + str(SS1) + ';  '
+                            + str(DS1) + '];'
+                            +'\n'
+                            )
+                print(lines[ii])
+            elif 'modelInput.fault.start' in lines[ii] and NP==2:
+                lines[ii] = ('modelInput.fault.start=['
+                            + str(int(self.estimate_length)) + ';  ' 
+                            + str(int(self.estimate_length)) + ';  '
+                            + str(int(depth)) + ';  '
+                            + str(int(-dip2)) + ';  '
+                            + str(int(strike2)) + ';  '
+                            + str(0) + ';  '
+                            + str(0) + ';  '
+                            + str(SS2) + ';  '
+                            + str(DS2) + '];'
+                            +'\n'
+                            )
+                print(lines[ii])
+            elif 'modelInput.fault.step' in lines[ii] and NP==1:
+                pass
+            elif 'modelInput.fault.step' in lines[ii] and NP==2:
+                pass 
+            elif 'modelInput.fault.lower' in lines[ii] and NP==1:
+                # if strike_lower1 < strike_upper1:
+                #     strike_bound = strike_lower1
+                # else:
+                #     strike_bound = strike_upper1
+                lines[ii] = ('modelInput.fault.lower=['
+                            + str(int(self.estimate_length*0.1)) + ';  ' 
+                            + str(int(self.estimate_length*0.1)) + ';  '
+                            + str(int(depth_lower)) + ';  '
+                            + str(-89) + ';  '
+                            + str(int(0)) + ';  '
+                            + str(int(-self.max_dist/2)) + ';  '
+                            + str(int(-self.max_dist/2)) + ';  '
+                            + str(SS1 - 10) + ';  '
+                            + str(DS1 - 10) + '];'
+                            +'\n'
+                            )
+                print(lines[ii])
+            elif 'modelInput.fault.lower' in lines[ii] and NP==2:
+                # if strike_lower2 < strike_upper2:
+                #     strike_bound = strike_lower2
+                # else:
+                #     strike_bound = strike_upper2
+                lines[ii] = ('modelInput.fault.lower=['
+                            + str(int(self.estimate_length*0.1)) + ';  ' 
+                            + str(int(self.estimate_length*0.1)) + ';  '
+                            + str(int(depth_lower)) + ';  '
+                            + str(-89) + ';  '
+                            + str(int(0)) + ';  '
+                            + str(int(-self.max_dist/2)) + ';  '
+                            + str(int(-self.max_dist/2)) + ';  '
+                            + str(SS2 - 10) + ';  '
+                            + str(DS2 - 10) + '];'
+                            '\n'
+                            )
+                print(lines[ii])
+            elif 'modelInput.fault.upper' in lines[ii] and NP==1:
+                # if strike_lower1 > strike_upper1:
+                #     strike_bound = strike_lower1
+                # else:
+                #     strike_bound = strike_upper1
+                lines[ii] = ('modelInput.fault.upper=['
+                            + str(int(self.estimate_length*10)) + ';  ' 
+                            + str(int(self.estimate_length*10)) + ';  '
+                            + str(int(depth*10)) + ';  '
+                            + str(int(-1)) + ';  '
+                            + str(int(360)) + ';  '
+                            + str(int(self.max_dist/2)) + ';  '
+                            + str(int(self.max_dist/2)) + ';  '
+                            + str(SS1 + 10) + ';  '
+                            + str(DS1 + 10) + '];'
+                            '\n'
+                            ) 
+                print(lines[ii])
+            elif 'modelInput.fault.upper' in lines[ii] and NP==2:
+                # if strike_lower2 > strike_upper2:
+                #     strike_bound = strike_lower2
+                # else:
+                #     strike_bound = strike_upper2
+                lines[ii] = ('modelInput.fault.upper=['
+                            + str(int(self.estimate_length*10)) + ';  ' 
+                            + str(int(self.estimate_length*10)) + ';  '
+                            + str(int(depth*10)) + ';  '
+                            + str(int(-1)) + ';  '
+                            + str(int(360)) + ';  '
+                            + str(int(self.max_dist/2)) + ';  '
+                            + str(int(self.max_dist/2)) + ';  '
+                            + str(SS2 + 10) + ';  '
+                            + str(DS2 + 10) + '];'
+                            '\n'
+                            ) 
+                print(lines[ii])
+        with open(input_loc, 'w') as file:
+            file.writelines(lines)
+        return
+
 
     def gbisrun(self, generateReport=True):
         cwd = os.getcwd()
@@ -815,14 +982,14 @@ class auto_GBIS:
         #     InSAR_codes_string = "invert_1_F"
         # else:
         self.InSAR_codes = np.arange(len(self.GBIS_mat_file_location) + 1)[1:len(self.GBIS_mat_file_location)+1]
-        if len(self.GBIS_mat_file_location) > 10: 
+        # if len(self.GBIS_mat_file_location) > 10: 
             
-            with open(self.path_to_data + '/ifgms_used_in_inversion.txt','r') as file:
-                lines = file.readlines()
-            self.InSAR_codes = [] 
-            for line in lines:
-                self.InSAR_codes.append(int(line.split('file')[0])+1)
-            self.InSAR_codes = np.array(self.InSAR_codes)
+        with open(self.path_to_data + '/ifgms_used_in_inversion.txt','r') as file:
+            lines = file.readlines()
+        self.InSAR_codes = [] 
+        for line in lines:
+            self.InSAR_codes.append(int(line.split('file')[0])+1)
+        self.InSAR_codes = np.array(self.InSAR_codes)
 
         # self.InSAR_codes = [1]
         print("~~~~~~~~ Insar Codes ~~~~~~~~~~~~~~~")
@@ -861,13 +1028,20 @@ class auto_GBIS:
         # else:
         if self.generateReport:
             try:
-                self.eng.generateFinalReport(self.outputfile,self.number_trials*0.2,nargout=0)
-            except:
+                self.eng.generateFinalReport(self.outputfile,self.number_trials*0.3,nargout=0)
+            except Exception as e:
+                print(e)
                 try:
-                    self.eng.generateFinalReport(self.outputfile,self.number_trials*0.1,nargout=0)
+                    self.eng.generateFinalReport(self.outputfile,self.number_trials*0.2,nargout=0)
                 except Exception as e:
                     print(e)
                     print('Well we failed to generate a report my Friend, moving on swiftly nothing to see here')
+                    try:
+                        self.eng.generateFinalReport(self.outputfile,self.number_trials*0.1,nargout=0)
+                    except Exception as e:
+                        print(e)
+                        print('Well we failed to generate a report my Friend, moving on swiftly nothing to see here')
+
 
 
 
@@ -1295,7 +1469,7 @@ if __name__ == "__main__":
                                                     )
             preproc_object_copy = preproc_object
         
-            GBIS_object = auto_GBIS(preproc_object,'/home/ee18jwc/code/auto_inv/GBIS.location',NP=1,number_trials=1e5,
+            GBIS_object = auto_GBIS(preproc_object,'./GBIS.location',NP=1,number_trials=1e5,
                                         pygmt=False,generateReport=True,location_search=False,limit_trials=False)
 
             shutil.move(GBIS_object.outputdir,GBIS_object.outputdir + '_location_run')
@@ -1358,7 +1532,7 @@ if __name__ == "__main__":
         # preproc_object = pickle.load(inp)
         
             try:
-                GBIS_object = auto_GBIS(preproc_object,'/home/ee18jwc/code/auto_inv/GBIS.location',NP=1,number_trials=1e5,pygmt=True,limit_trials=False)
+                GBIS_object = auto_GBIS(preproc_object,'./GBIS.location',NP=1,number_trials=1e5,pygmt=True,limit_trials=False)
                 locations_reloc_NP1.append([GBIS_object.GBIS_lat,GBIS_object.GBIS_lon]) 
                 opt_models_NP1.append(GBIS_object.opt_model)
             except Exception as e:
@@ -1366,7 +1540,7 @@ if __name__ == "__main__":
                     pass 
             try:
                 print('I am in this try')
-                GBIS_object = auto_GBIS(preproc_object,'/home/ee18jwc/code/auto_inv/GBIS.location',NP=2,number_trials=1e5,pygmt=True,limit_trials=False)
+                GBIS_object = auto_GBIS(preproc_object,'./GBIS.location',NP=2,number_trials=1e5,pygmt=True,limit_trials=False)
                 locations_reloc_NP2.append([GBIS_object.GBIS_lat,GBIS_object.GBIS_lon]) 
                 opt_models_NP2.append(GBIS_object.opt_model)
             except Exception as e:

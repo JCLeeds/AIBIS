@@ -66,7 +66,7 @@ def location_plot(input_txt_file,poly_list,save_location):
     resolution="15s",
     region=region,
     )
-    fig.grdimage(grid=grid_map, cmap="oleron")
+    fig.grdimage(grid=grid_map, cmap="dem3")
 
     fig.plot(
         data="gem_active_faults_harmonized.gmt",
@@ -77,7 +77,7 @@ def location_plot(input_txt_file,poly_list,save_location):
         region=region,
         )
     
-    color_array = ['black','red','blue','green','yellow','brown','lightblue','gray','lightgrey']
+    color_array = ['red','blue','green','yellow','brown','lightblue','gray','lightgrey','black']
     ii = 0 
     for frame in frame_coords:
         fig.plot(x=frame[0],

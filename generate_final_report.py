@@ -1,10 +1,11 @@
 import pylatex
 from pylatex import Document, Section, Subsection, Tabular, Math, TikZ, Axis, \
-    Plot, Figure, Matrix, Alignat, Command, TextColor, Hyperref, Package
+    Plot, Figure, Matrix, Alignat, Command, TextColor, Hyperref, Package, LongTable, MultiColumn
 from pylatex.utils import italic, NoEscape, escape_latex
 from pylatex.basic import NewPage
 import os 
 import glob
+import numpy as np
 def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
     
     dirs = next(os.walk(GBIS_Area_path))[1]
@@ -220,6 +221,11 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
                 # print(frame_dir)
                 # dates = next(os.walk(top_dir_NP1_inv))[1]
                 dates = [ f.path for f in os.scandir(frame_dir_inv) if f.is_dir() ]
+                if active_ifgms:
+                    pass 
+                else:
+                    for date in dates:
+                        active_ifgms.append(date.split('/')[-1]) 
                 # print(dates)
                 for date in dates:
                     link_to_date = link_to_frame_jasmin + '/interferograms/' + date.split('/')[-1]
@@ -236,10 +242,10 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
                             doc.append(date.split('/')[-1])
                             doc.append(hyperlink(link_to_date,'(link)'))
                             doc.append('\n')
-                    else:
-                        doc.append(TextColor('green',date.split('/')[-1]))
-                        doc.append(hyperlink(link_to_date,'(Date used in inversion link)'))
-                        doc.append('\n')
+                    # else:
+                    #     doc.append(TextColor('green',date.split('/')[-1]))
+                    #     doc.append(hyperlink(link_to_date,'(Date used in inversion link)'))
+                    #     doc.append('\n')
                 
 
                
@@ -256,7 +262,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
                 link_to_network_png = frame_dir_proc + '/network11.png'
 
                 with doc.create(Figure(position='h!')) as pic:
-                    pic.add_image(link_to_network_png, width='350px')
+                    pic.add_image(link_to_network_png, width='100px')
                     pic.add_caption('Network of available coseismic interferograms.')
 
                 with doc.create(Figure(position='h!')) as pic:
@@ -273,18 +279,36 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
                     pic.add_caption('All coseismic interferograms with location run signal mask shown.')
               
     path_to_np1_dir = GBIS_Area_path + '/../' + ID + '_NP1'
-    print(path_to_np1_dir+'/invert_*')
+    path_to_beachball_NP1 = GBIS_Area_path + '/' + ID +'_InSAR_beachball_NP1.png'
+    # print(path_to_np1_dir+'/invert_*')
     inverts_NP1 = glob.glob(path_to_np1_dir+'/invert_*')
-    print(inverts_NP1)
+    # print(inverts_NP1)
     for invert in inverts_NP1:
         if 'location_run' in invert:
-            print(invert)
+            # print(invert)
             pass 
         else:
-            print(invert)
+            # print(invert)
             NP1_solution = invert
     # print(inverts_NP1)
     NP1_solution_figures = NP1_solution + '/Figures'
+    NP1_txt_solution = glob.glob(NP1_solution +'/summary*')[0]
+    with open(NP1_txt_solution,'r') as f:
+        lines = f.readlines()
+    lines = lines[7:len(lines)]
+    starting_values = [] 
+    for line in lines:
+        line_list = list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+        # print(line_list)
+        starting_values.append(line_list[-1])
+    # print((starting_values[8]))
+    # print((starting_values[7]))
+    rake_start = np.rad2deg(np.arctan2(-float(starting_values[8]),-float(starting_values[7])))
+    rake_start =  round(rake_start, 6)
+    starting_values = [rake_start] + starting_values[0:len(starting_values)-1]
+
+
+        
     data_model_res = glob.glob(NP1_solution_figures + '/*InSAR_Data_Model*')
     doc.append(NewPage(1))
     # doc.preamble.append(NoEscape(r'\clearpage'))
@@ -302,19 +326,48 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
         with doc.create(Figure(position='h!')) as pic:
                         pic.add_image(path_to_PDF, width='500px')
                         pic.add_caption('Probability distibution functions NP1')
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_beachball_NP1, width='100px')
+                        pic.add_caption('Focal mechanism plot using NP1 solution')
+
+        with doc.create(LongTable("l l l l l l l")) as data_table:
+            data_table.add_hline()
+            data_table.add_row(["MODEL PARAM", "OPTIMAL", "MEAN",'MEDIAN','2.5%','97.5%','STARTING'])
+            data_table.add_hline()
+            data_table.end_table_header()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_footer()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Not Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_last_footer()
+            
+        
+            for ii,line in enumerate(lines):
+                row_list =  list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+                row_list[-1] = starting_values[ii]
+                # print(row_list)
+                data_table.add_row(row_list)
 
         for frame in active_frames:
             frame_dir_inv = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_INVERSION_Results_NP1')
             frame_dir_proc = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_processing_report_NP1')
             dates = [ f.path for f in os.scandir(frame_dir_inv) if f.is_dir() ]
             downsamp_mosaic = frame_dir_proc + '/All_ifgms_easy_look_up_downsamp.png'
-
+            
             with doc.create(Figure(position='h!')) as pic:
                         pic.add_image(downsamp_mosaic, width='350px')
                         pic.add_caption('Easy look up of all dates used in inversion.' )
 
             for date in dates:
+                print(date)
+                print(active_ifgms)
                 if date.split('/')[-1] in active_ifgms:
+                    print('__________________HERE_________________')
                     link_to_forward_NP1 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_1.png'
                     link_to_inversion_NP1 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
                     link_to_location_NP1 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
@@ -323,6 +376,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
 
                     with doc.create(Figure(position='h!')) as pic:
                         pic.add_image(link_to_forward_NP1, width='350px')
+                        print(link_to_forward_NP1)
                         pic.add_caption('USGS forward model nodal plane one for dates ' + date.split('/')[-1] )
 
                     with doc.create(Figure(position='h!')) as pic:
@@ -341,6 +395,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
         
 
     path_to_np2_dir = GBIS_Area_path + '/../' + ID + '_NP2'
+    path_to_beachball_NP2 = GBIS_Area_path + '/' + ID +'_InSAR_beachball_NP2.png'
     print(path_to_np2_dir+'/invert_*')
     inverts_NP2 = glob.glob(path_to_np2_dir+'/invert_*')
     for invert in inverts_NP2:
@@ -349,6 +404,22 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
         else:
             NP2_solution = invert
     # print(inverts_NP2)
+    NP2_txt_solution = glob.glob(NP2_solution +'/summary*')[0]
+    with open(NP2_txt_solution,'r') as f:
+        lines = f.readlines()
+    lines = lines[7:len(lines)]
+    starting_values = [] 
+    for line in lines:
+        line_list = list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+        # print(line_list)
+        starting_values.append(line_list[-1])
+    # print(float(-starting_values[-8]))
+    # print(float(-starting_values[-7]))
+    rake_start = np.rad2deg(np.arctan2(-float(starting_values[8]),-float(starting_values[7])))
+    rake_start =  round(rake_start, 6)
+    starting_values = [rake_start] + starting_values[0:len(starting_values)-1]
+
+
     NP2_solution_figures = NP2_solution + '/Figures'
     data_model_res = glob.glob(NP2_solution_figures + '/*InSAR_Data_Model*')
     doc.append(NewPage(1))
@@ -368,6 +439,32 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
                         pic.add_image(path_to_PDF, width='500px')
                         pic.add_caption('Probability distibution functions NP2')
 
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_beachball_NP2, width='100px')
+                        pic.add_caption('Focal mechanism plot using NP2 solution')
+
+        with doc.create(LongTable("l l l l l l l")) as data_table:
+            data_table.add_hline()
+            data_table.add_row(["MODEL PARAM", "OPTIMAL", "MEAN",'MEDIAN','2.5%','97.5%','STARTING'])
+            data_table.add_hline()
+            data_table.end_table_header()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_footer()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Not Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_last_footer()
+            
+            for ii,line in enumerate(lines):
+                row_list =  list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+                row_list[-1] = starting_values[ii]
+                # print(row_list)
+                data_table.add_row(row_list)
+
         for frame in active_frames:
             frame_dir_inv = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_INVERSION_Results_NP2')
             frame_dir_proc = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_processing_report_NP2')
@@ -379,7 +476,10 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
                         pic.add_caption('Easy look up of all dates used in inversion.')
 
             for date in dates:
+                # print(date)
+                # print(active_ifgms)
                 if date.split('/')[-1] in active_ifgms:
+                    print('~~~~~~~~~~~~~~~~~~~~HERE~~~~~~~~~~~~~~~~~~~~~~~~')
                     link_to_forward_NP2 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_2.png'
                     link_to_inversion_NP2 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
                     link_to_location_NP2 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
@@ -478,33 +578,33 @@ def hyperlink(url,text):
 
 
 if __name__=='__main__':
-    generateReport('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/most_recent_run/us7000fu12_GBIS_area','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/most_recent_run/us7000fu12_NP1','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/most_recent_run/us7000fu12_NP2','us7000fu12')
+    generateReport('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us7000mbuv_GBIS_area','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us7000mbuv_NP1','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us7000mbuv_NP2','us7000mbuv')
     
-    # full_test = [
-    #             'us60007anp',
-    #             'us7000df40',
-    #             'us6000bdq8',
-    #             'us70006sj8', 
-    #             'us7000g9zq',  
-    #             'us70008cld',
-    #             'us600068w0',
-    #             'us7000m3ur',
-    #             'us6000a8nh',
-    #             'us7000mpe2',
-    #             'us7000lt1i',
-    #             'us6000b26j',
-    #             'us6000ddge',
-    #             'us7000mbuv',
-    #             'us6000dxge',
-    #             'us6000dyuk',
-    #             'us6000jk0t',
-    #             'us6000kynh',
-    #             'us6000mjpj',
-    #             'us7000abmk',
-    #             'us7000cet5',
-    #             'us7000fu12',
-    #             'us7000gebb',
-    # ]
+    full_test = [
+                'us60007anp',
+                'us7000df40',
+                'us6000bdq8',
+                'us70006sj8', 
+                'us7000g9zq',  
+                'us70008cld',
+                'us600068w0',
+                'us7000m3ur',
+                'us6000a8nh',
+                'us7000mpe2',
+                'us7000lt1i',
+                'us6000b26j',
+                'us6000ddge',
+                'us7000mbuv',
+                'us6000dxge',
+                'us6000dyuk',
+                'us6000jk0t',
+                'us6000kynh',
+                'us6000mjpj',
+                'us7000abmk',
+                'us7000cet5',
+                'us7000fu12',
+                'us7000gebb',
+    ]
     # for ii in range(len(full_test)):
     #     USGS_ID = full_test[ii]
     #     try:

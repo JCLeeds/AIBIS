@@ -249,9 +249,9 @@ def forward_modelling_2D_plot(resampled_terrain,gradiant_terrain,ifgix):
     print('plotting USGS location')
     fig.plot(x=locations[0],
              y=locations[1],
-             pen='1p,red',
+             pen='1p,black',
              style='a0.4c',
-             fill='darkorange')
+             fill='white')
     font = "2p,Helvetica-Bold"
     fig.text(x=locations[0], y=locations[1] + np.abs(0.001*locations[1]), text="USGS", font=font, region=region,projection='M8c',fill="white")
     fig.colorbar(frame=["x+lLOS displacment(m)", "y+lm"], position="JMB",projection='M8c') # ,panel=[1,0]

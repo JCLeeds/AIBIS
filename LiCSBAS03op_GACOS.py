@@ -92,10 +92,6 @@ import SCM
 import LiCSBAS_io_lib as io_lib
 import LiCSBAS_tools_lib as tools_lib
 import LiCSBAS_plot_lib as plot_lib
-import mosiac_images as mi
-from PIL import Image
-import pylab as plt 
-
 
 class Usage(Exception):
     """Usage context manager"""
@@ -391,39 +387,6 @@ def main(argv=None,auto=None):
             print('Copy {}'.format(os.path.basename(file)), flush=True)
             shutil.copy(file, out_dir)
     
-    image_list = []
-    dates_list_title = [] 
-    gacos_image_list = [] 
-
-    # J.C addition make mosiac for frame 
-    for ifgix, ifgd in enumerate(ifgdates2): 
-        out_dir1 = os.path.join(out_dir, ifgd)
-        unwfile_c = os.path.join(out_dir1, ifgd+'.unw')
-        gacos_c = os.path.join(out_dir1, ifgd+'.gacos.png')
-        if os.path.isfile(gacos_c):
-            gacos_image_list.append(np.asarray(Image.open(gacos_c)))
-        if os.path.isfile(unwfile_c):
-            image_list.append(np.asarray(Image.open(unwfile_c + '.png')))
-        # dates_list_title.append(ifgd)
-
-    if len(image_list) > 3:
-        num_cols = 3
-    else:
-        num_cols = len(image_list)
-
-    figure = mi.show_image_list(list_images=image_list, 
-                list_titles=None,
-                num_cols=num_cols,
-                figsize=(50, 50),
-                grid=False,
-                title_fontsize=10)
-
-    figure.savefig(os.path.join(out_dir,'All_ifgms_easy_look_up_gacos.png'),bbox_inches='tight')
-    plt.close('all')
-
-
-
-
     
     #%% Finish
     elapsed_time = time.time()-start
@@ -591,6 +554,8 @@ def correct_wrapper(i):
     plot_lib.make_im_png(np.angle(np.exp(1j*unw_cor/cycle)*cycle), pngfile, cmap_wrap, title, -np.pi, np.pi, cbar=False)
 
     return 2, [ifgd, std_unw, std_unwcor, rate]
+
+
 
 
 #%% main

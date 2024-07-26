@@ -698,7 +698,8 @@ def calc_cov(Lon, Lat, ifgm, sill_cov,range_cov,nugget_cov):
 
 
 def invert_plane(ifgm, lat, lon):
-    indexs_to_remove_for_decimation = np.random.randint(low=0,high=len(ifgm),size=int(len(ifgm)*0.6)) # change to smaller value decimation to harsh this needs to be sped up 
+    indexs_to_remove_for_decimation = np.random.randint(low=0,high=len(ifgm),size=int(len(ifgm)*0.1)) # change to smaller value decimation to harsh this needs to be sped up 
+    # ifgm_orig = ifgm.copy()
     ifgm = ifgm[~indexs_to_remove_for_decimation]
     lat = lat[~indexs_to_remove_for_decimation]
     lon = lon[~indexs_to_remove_for_decimation]   

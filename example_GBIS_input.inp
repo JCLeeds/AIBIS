@@ -50,7 +50,7 @@ modelInput.dike.upper = [15000;  10000; 10000;   -0.1;   360;  15000;   3000; 10
 % Rectangular fault (Okada) 'F'
 %                            L       W      Z     Dip     Str      X       Y      SS       DS
 modelInput.fault.start = [ 8050;   8050;   25000;   -75.0;   312;   0;  0;   1.0;     1.0];    % starting model
-modelInput.fault.step =  [ 1000;     1000;    100;      1;     1;    100;      100;  0.1;    0.1];    % initial maximium step size % changed DS SS from 0.01 to 0.1
+modelInput.fault.step =  [   100;    100;   500;      1;     1;    100;    100;  0.01;    0.01];    % initial maximium step size % changed DS SS from 0.01 to 0.1
 modelInput.fault.lower = [ 3000;   3000;   100;   -89.9;   0;  -100000;   -10000;  -30.0;   -30.0];    % lower bounds on m
 modelInput.fault.upper = [30000;   30000;   40000;   -0.1;   360;  100000;    100000  ;  30.0;    30.0];    % upper bounds on m
 

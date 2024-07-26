@@ -239,7 +239,7 @@ def main(argv=None,auto=None):
         n_unw += ~np.isnan(unw) # Summing number of unnan unw
 
     ## Identify valid area and calc rate_cov
-    bool_valid = (n_unw>=2) # JC edit changed from percentage of each ifgm that has more non nan pixels in that spot than nimages.
+    bool_valid = (n_unw>=1) # JC edit changed from percentage of each ifgm that has more non nan pixels in that spot than nimages.
     n_unw_valid = bool_valid.sum()
     # print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~checker~~~~~~~~~~~~~~~~~~')
     # print('imdates=' + str(imdates))

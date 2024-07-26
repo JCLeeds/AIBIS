@@ -41,8 +41,8 @@ def calc_rates(mask,data,ds_total_points):
 
     print("ds_aim is === " + str(ds_total_points))
 
-    inside_downsample_rate = int(np.sqrt(int(points_inner/(ds_total_points*0.75))))
-    outside_downsample_rate = int(np.sqrt(int(points_outer/(ds_total_points*0.25))))
+    inside_downsample_rate = int(np.sqrt(int(points_inner/(ds_total_points*0.5))))
+    outside_downsample_rate = int(np.sqrt(int(points_outer/(ds_total_points*0.5))))
 
     # actual_number_of_points = (points_inner_real/(inside_downsample_rate*inside_downsample_rate)) + (points_outer_real/(outside_downsample_rate*outside_downsample_rate))
     # print("ACTUAL NUMBER OF EXPECTED POINTS")
@@ -172,6 +172,8 @@ def resample_all(data,Inc,Head, X, Y,cent,radius,ds_total_points,dlon,dlat,pixsp
     # removing zeros 
     inside_points = inside_points[~np.all(inside_points == 0, axis=1)]
     outside_points = outside_points[~np.all(outside_points == 0, axis=1)]
+    inside_points = inside_points[~np.all(np.isnan(inside_points), axis=1)]
+    outside_points = outside_points[~np.all(np.isnan(outside_points), axis=1)]
 
     # Problem for future when using remove any it will remove the 0,0 point which is not what we want we only want the mask removed. 
     # print(np.vstack([inside_points, outside_points]))
