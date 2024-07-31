@@ -278,10 +278,10 @@ if __name__ == '__main__':
         -0.47416,
         -0.28685,
                 0]
-        geoc_ml_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000jk0t_insar_processing/GEOC_072A_05090_131313_floatml_masked_GACOS_Corrected_clipped'
+        geoc_ml_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000abnv_insar_processing/GEOC_043A_05008_161514_floatml_masked_GACOS_Corrected_clipped'
         output_geoc = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/test'
-        location = [44.9097,38.4199]
-        vertex_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000jk0t_NP1/invert_1_2_3_4_5_F/optmodel_vertex.mat'
+        location = [40.7073,39.4229]
+        vertex_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000abnv_NP1/invert_16_21_26_32_37_46_F/optmodel_vertex.mat'
         output_location_comp(geoc_ml_path,output_geoc,model,location,vertex_path)
         print('MADE IT PAST O')
     # except:

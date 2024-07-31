@@ -203,7 +203,7 @@ if __name__ == '__main__':
     
     # full_test = ['us70006sj8']
 
-    full_test = ['us6000abnv',
+    full_test = [
                 'us6000iaqi',
                 'us7000ljvg',
                 'us7000gx8m',
@@ -238,10 +238,11 @@ if __name__ == '__main__':
                 'us6000mjpj',
                 'us6000ldpm',
                 'us6000lfn5',
-                'us6000len8',             
+                'us6000len8',  
+                'us6000abnv',           
     ]
     failed_tests = [] 
-    # full_test = full_test + list(df_china.ComCatID)+ list(df_Iran.ComCatID) + list(df_turkey.ComCatID) +list(df_pakist.ComCatID) + list(df_land.id)
+    full_test = full_test + list(df_china.ComCatID)+ list(df_Iran.ComCatID) + list(df_turkey.ComCatID) +list(df_pakist.ComCatID) + list(df_land.id)
     # full_test = []
     # full_test = ['us70008cld']
     # full_test = ['us6000jk0t']
@@ -255,18 +256,18 @@ if __name__ == '__main__':
     # full_test = ['us6000dxge']
     # full_test = ['us6000iaqi']
     # full_test = ['us6000dxge']
-    full_test = ['us6000kynh']
+    # full_test = ['us6000kynh']
 
     for ii in range(len(full_test)):
-        # try:
+        try:
             main(full_test[ii])
             gc.collect()
-        # except Exception as e: 
-        #     print(e)
-        #     try:
-        #         main(full_test[ii])
-        #     except:
-        #         pass
+        except Exception as e: 
+            print(e)
+            try:
+                main(full_test[ii])
+            except:
+                pass
             
-        #     print(full_test[ii])
-        #     failed_tests.append(full_test[ii])
+            print(full_test[ii])
+            failed_tests.append(full_test[ii])

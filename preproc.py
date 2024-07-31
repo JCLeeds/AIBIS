@@ -408,13 +408,14 @@ class deformation_and_noise:
         cent = [float(self.event_object.time_pos_depth['Position'][0]),float(self.event_object.time_pos_depth['Position'][1])]
         print(cent)
         # clip_width = (float(self.event_object.MTdict['magnitude']) * scale_factor_mag)+(float(self.event_object.time_pos_depth['Depth'])*scale_factor_depth)
-        clip_width = (self.event_object.diameter_mask_in_m * 3)/(111.13 * 10**3) # Not tested
+        clip_width = (self.event_object.diameter_mask_in_m * 4)/(111.13 * 1e3) # Not tested
 
         print(clip_width)
         lat1 = cent[0] - clip_width/2 
         lon1 = cent[1] - clip_width/2
         lat2 = cent[0] + clip_width/2 
         lon2 = cent[1] + clip_width/2 
+        # if lat1 > np.min(lat)
         # geoc_clipped_path = geoc_ml_path + "_clipped"
         geo_string = str(lon1) +"/" + str(lon2) + "/" + str(lat1) + "/" + str(lat2)
         print(geo_string)
@@ -768,7 +769,8 @@ class deformation_and_noise:
                             frame_in_geoc + '.geo.U.tif',
                             'baselines',
                             'metadata.txt',
-                            'network.png']
+                            'network.png',
+                            frame_in_geoc + '-poly.txt']
                     
             # pulled_files = [f for f in os.listdir(geoc) if os.path.isfile(f)]
             # print(os.listdir(geoc))
@@ -779,6 +781,8 @@ class deformation_and_noise:
             res = all(ele in os.listdir(geoc) for ele in file_checker)
             print(res)
             if  all(ele in os.listdir(geoc) for ele in file_checker) is False:
+                print('Missing Files')
+                print(set(os.listdir(geoc)) - set(file_checker))
                 broken_data_pulls_geoc.append(geoc)
         for geoc in broken_data_pulls_geoc:
                 print('I am removing this geoc as the data pull failed to get all files  ' + geoc)

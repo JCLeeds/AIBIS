@@ -423,7 +423,7 @@ class USGS_event:
                 widths =  [111.13*0.5*1e3/3]
             
             if checker == True and np.max(np.array(widths)) > (111.13*2*1e3)/3:
-                widths = [111.13*1*1e3/3]
+                widths = [111.13*1*1e3/4]
             # checker = [x if len(widths)>0 else len(widths) == 0]
             # print(len)
             # print(checker)

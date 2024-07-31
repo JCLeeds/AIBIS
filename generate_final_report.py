@@ -7,7 +7,7 @@ import os
 import glob
 import numpy as np
 def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
-    
+
     dirs = next(os.walk(GBIS_Area_path))[1]
     proc_dirs = [x for x in dirs if "processing_report_" in x]
     results_dir = [x for x in dirs if "INVERSION_Results" in x]
@@ -61,6 +61,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
     path_to_location_png = os.path.join(GBIS_Area_path,'location_and_active_frames_plot.png')
     path_to_active_frame_info = os.path.join(GBIS_Area_path,'frames_sent_to_gbis.txt')
     path_to_ifgms_used = os.path.join(GBIS_Area_path,'ifgms_used_in_inversion.txt')
+    path_to_auto_inv = os.getcwd()
     with open(path_to_event_file,'r') as file:
             params = file.readlines()
   
@@ -84,6 +85,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
     geometry_options = {"tmargin": "1cm", "lmargin": "1cm", 'rmargin':'1cm', 'bmargin':'1cm'}
     doc = Document(geometry_options=geometry_options)
     doc.packages.append(Package('hyperref'))
+    doc.preamble.append(NoEscape(r'\usepackage[section]{placeins}'))
     # doc = Document()
 
 
@@ -124,30 +126,30 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
     # doc.preamble.append(Command('date', NoEscape(r'\vspace{-3ex}'))) #didn't want a date
     # doc.append(NoEscape(r'\maketitle'))
 
-    doc.preamble.append(NoEscape(r'\begin{titlepage}'))
-    doc.preamble.append(NoEscape(r'\centering'))
-    doc.preamble.append(NoEscape(r'\vspace{0.5 cm}'))
-    doc.preamble.append(NoEscape(r'\centering'))
-    doc.preamble.append(NoEscape(r'\includegraphics[scale = 0.1]{Logo.jpg}\\[1.0 cm]'))
-    doc.preamble.append(NoEscape(r'\textsc{\LARGE University of Leeds}\\[2.0 cm]'))
-    doc.preamble.append(NoEscape(r'\textsc{\Large School of Earth and Environment}\\[0.5 cm]'))
-    doc.preamble.append(NoEscape(r'\textsc{\large GABIS Inversion Report. }\\[0.5 cm]'))
-    doc.preamble.append(NoEscape(r'\rule{\linewidth}{0.2 mm} \\[0.4 cm]'))
-    doc.preamble.append(NoEscape(r'\huge \bfseries \thetitle}\\'))
-    doc.preamble.append(NoEscape(r'\rule{\linewidth}{0.2 mm} \\[1.5 cm] '))
-    doc.preamble.append(NoEscape(r'\begin{minipage}{0.4\textwidth}'))
-    doc.preamble.append(NoEscape(r'\begin{center} \large'))
-    doc.preamble.append(NoEscape(r'\emph{Author:}\\'))
-    doc.preamble.append(NoEscape(r'	J. Condon'))
-    doc.preamble.append(NoEscape(r'\end{center}'))
-    doc.preamble.append(NoEscape(r'\end{minipage}~\\[2 cm]'))
+    doc.append(NoEscape(r'\begin{titlepage}'))
+    doc.append(NoEscape(r'\centering'))
+    doc.append(NoEscape(r'\vspace{0.5 cm}'))
+    doc.append(NoEscape(r'\centering'))
+    doc.append(NoEscape(r'\includegraphics[scale = 0.1]{../Logo.jpg}\\[1.0 cm]'))
+    doc.append(NoEscape(r'\textsc{\LARGE University of Leeds}\\[2.0 cm]'))
+    doc.append(NoEscape(r'\textsc{\Large School of Earth and Environment}\\[0.5 cm]'))
+    doc.append(NoEscape(r'\textsc{\large GABIS Inversion Report. }\\[0.5 cm]'))
+    doc.append(NoEscape(r'\rule{\linewidth}{0.2 mm} \\[0.4 cm]'))
+    doc.append(NoEscape(r'{\huge \bfseries \thetitle}'))
+    doc.append(NoEscape(r'\rule{\linewidth}{0.2 mm} \\[1.5 cm] '))
+    doc.append(NoEscape(r'\begin{minipage}{0.4\textwidth}'))
+    doc.append(NoEscape(r'\begin{center} \large'))
+    doc.append(NoEscape(r'\emph{Author:}\\'))
+    doc.append(NoEscape(r'	J. Condon'))
+    doc.append(NoEscape(r'\end{center}'))
+    doc.append(NoEscape(r'\end{minipage}~\\[2 cm]'))
     # doc.preamble.append(NoEscape(r'\begin{minipage}{0.4\textwidth}'))
     # doc.preamble.append(NoEscape(r'\begin{center}'))
     # doc.preamble.append(NoEscape(r'\emph{auto_generted:} \\'))
     # doc.preamble.append(NoEscape(r'Geodetic Automated Baysian Inversion Software (GABIS)'))
     # doc.preamble.append(NoEscape(r'\end{center}'))
     # doc.preamble.append(NoEscape(r'\end{minipage}\\[2 cm] '))
-    doc.preamble.append(NoEscape(r'\end{titlepage}'))
+    doc.append(NoEscape(r'\end{titlepage}'))
 
 
     with doc.create(Section('Event Information')):
@@ -178,7 +180,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
         active_frames.append(mat_file.split('_floatml')[0].split('EOC_')[-1])
         
     # print(active_frames)
-    doc.append(NewPage())
+    # doc.append(NewPage())
     # GEOC_166D_06139_131313_floatml_masked_GACOS_Corrected_clipped_signal_masked_QAed_down_sampled
     try:
         with open(path_to_ifgms_used,'r') as file:
@@ -190,6 +192,356 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
         ifgms_full_path = [] 
         active_ifgms = []
    
+   
+    path_to_np1_dir = GBIS_Area_path + '/../' + ID + '_NP1'
+    path_to_beachball_NP1 = GBIS_Area_path + '/' + ID +'_InSAR_beachball_NP1.png'
+    # print(path_to_np1_dir+'/invert_*')
+    inverts_NP1 = glob.glob(path_to_np1_dir+'/invert_*')
+    # print(inverts_NP1)
+    for invert in inverts_NP1:
+        if 'location_run' in invert:
+            # print(invert)
+            pass 
+        else:
+            # print(invert)
+            NP1_solution = invert
+    # print(inverts_NP1)
+    NP1_solution_figures = NP1_solution + '/Figures'
+    NP1_txt_solution = glob.glob(NP1_solution +'/summary*')[0]
+    with open(NP1_txt_solution,'r') as f:
+        lines = f.readlines()
+    lines = lines[7:len(lines)]
+    starting_values = [] 
+    for line in lines:
+        line_list = list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+        # print(line_list)
+        starting_values.append(line_list[-1])
+    # print((starting_values[8]))
+    # print((starting_values[7]))
+    rake_start = np.rad2deg(np.arctan2(-float(starting_values[8]),-float(starting_values[7])))
+    rake_start =  round(rake_start, 6)
+    starting_values = [rake_start] + starting_values[0:len(starting_values)-1]
+
+
+        
+    data_model_res = glob.glob(NP1_solution_figures + '/*InSAR_Data_Model*')
+    # doc.append(NewPage(1))
+    # doc.preamble.append(NoEscape(r'\clearpage'))
+    with doc.create(Section('Inversion Results NP1')):
+        path_to_convergence = NP1_solution_figures + '/Convergence.png'
+        path_to_jointprobs = NP1_solution_figures + '/JointProbabilities.png'
+        path_to_PDF = glob.glob(NP1_solution_figures+'/*DFs*')[0]
+
+        with doc.create(LongTable("l l l l l l l")) as data_table:
+            data_table.add_hline()
+            data_table.add_row(["MODEL PARAM", "OPTIMAL", "MEAN",'MEDIAN','2.5%','97.5%','STARTING'])
+            data_table.add_hline()
+            data_table.end_table_header()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_footer()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Not Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_last_footer()
+            for ii,line in enumerate(lines):
+                row_list =  list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+                row_list[-1] = starting_values[ii]
+                # print(row_list)
+                data_table.add_row(row_list)
+
+            
+        # print(path_to_PDF)
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_jointprobs, width='350px')
+                        pic.add_caption('Joint Probabilities NP1 ')
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_convergence, width='350px')
+                        pic.add_caption('Convergence NP1')
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_PDF, width='350px')
+                        pic.add_caption('Probability distibution functions NP1')
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_beachball_NP1, width='100px')
+                        pic.add_caption('Focal mechanism plot using NP1 solution')
+
+        doc.append(NoEscape(r'\FloatBarrier'))
+
+
+        link_to_forward_NP1 = []
+        link_to_inversion_NP1 = []
+        link_to_location_NP1 = []
+        link_to_semi_varigoram = []
+        downsamp_mosaic = []
+        list_of_frames = [] 
+
+        for frame in active_frames:
+            frame_dir_inv = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_INVERSION_Results_NP1')
+            frame_dir_proc = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_processing_report_NP1')
+            dates = [ f.path for f in os.scandir(frame_dir_inv) if f.is_dir() ]
+            downsamp_mosaic.append(frame_dir_proc + '/All_ifgms_easy_look_up_downsamp.png')
+            
+            # if os.path.isfile(downsamp_mosaic):
+            #     with doc.create(Figure(position='h!')) as pic:
+            #                 pic.add_image(downsamp_mosaic, width='350px')
+            #                 pic.add_caption('Easy look up of all dates used in inversion.' )
+            # doc.append(NoEscape(r'\FloatBarrier'))
+            # with doc.create(Subsection(' USGS Forward Models for All Dates in ' + str(frame)+ ' NP1')):
+            for date in dates:
+                    print(date)
+                    print(active_ifgms)
+                    if date.split('/')[-1] in active_ifgms:
+                        print('__________________HERE_________________')
+                        link_to_forward_NP1.append(frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_1.png')
+                        link_to_inversion_NP1.append(frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png')
+                        link_to_location_NP1.append(frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png')
+                        link_to_semi_varigoram.append(frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png')
+                        list_of_frames.append(frame) 
+
+
+        
+
+        doc.append(NoEscape(r'\FloatBarrier'))
+        with doc.create(Subsection('Model Generated from Inversion NP1')):
+            for ii, path in enumerate(link_to_inversion_NP1):
+              with doc.create(Figure(position='ht!')) as pic:
+                            pic.add_image(path, width='350px')
+                            pic.add_caption('Inversion results for NP1 for frame ' + str(list_of_frames[ii]) + ' on dates ' + date.split('/')[-1])
+
+        doc.append(NoEscape(r'\FloatBarrier'))
+        with doc.create(Subsection('Model Generated from USGS NP1')):
+            for  ii, path in enumerate(link_to_forward_NP1):
+              with doc.create(Figure(position='ht!')) as pic:
+                            pic.add_image(path, width='350px')
+                            pic.add_caption('Inversion results for NP1 for frame ' + str(list_of_frames[ii]) + ' on dates '  + date.split('/')[-1])
+
+
+        doc.append(NoEscape(r'\FloatBarrier'))
+        with doc.create(Subsection('Fault Plane Generated from Inversion NP1')):
+            for  ii, path in enumerate(link_to_location_NP1):
+              with doc.create(Figure(position='ht!')) as pic:
+                            pic.add_image(path, width='350px')
+                            pic.add_caption('Inversion results for NP1 for frame ' + str(list_of_frames[ii]) + ' on dates '  + date.split('/')[-1])
+
+
+        doc.append(NoEscape(r'\FloatBarrier'))
+        with doc.create(Subsection('Ifgms Used in Inversion')):
+            for ii, path in enumerate(downsamp_mosaic):
+              with doc.create(Figure(position='ht!')) as pic:
+                            pic.add_image(path, width='350px')
+                            pic.add_caption('Ifgms Used in Inversion from frame ' + str(active_frames[ii]) + ' on dates ' + date.split('/')[-1])
+
+        doc.append(NoEscape(r'\FloatBarrier'))
+        with doc.create(Subsection('SemiVariograms of Data used in Inversion')):
+            for  ii, path in enumerate(link_to_semi_varigoram):
+              with doc.create(Figure(position='ht!')) as pic:
+                            pic.add_image(path, width='350px')
+                            pic.add_caption('Inversion results for NP1 for frame ' + str(list_of_frames[ii]) + ' on dates '  + date.split('/')[-1])
+
+
+
+
+
+
+            #             with doc.create(Figure(position='ht!')) as pic:
+            #                 pic.add_image(link_to_forward_NP1, width='350px')
+            #                 print(link_to_forward_NP1)
+            #                 pic.add_caption('USGS forward model nodal plane one for dates ' + date.split('/')[-1] )
+            # doc.append(NoEscape(r'\FloatBarrier'))
+            # with doc.create(Subsection('Model Generated from Inversion NP1')):
+            #     for date in dates:
+            #         if date.split('/')[-1] in active_ifgms:
+            #             print('__________________HERE_________________')
+            #             link_to_forward_NP1 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_1.png'
+            #             link_to_inversion_NP1 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
+            #             link_to_location_NP1 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
+            #             link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
+
+
+            #             with doc.create(Figure(position='ht!')) as pic:
+            #                 pic.add_image(link_to_inversion_NP1, width='350px')
+            #                 pic.add_caption('Inversion results for NP1 for dates ' + date.split('/')[-1])
+            # doc.append(NoEscape(r'\FloatBarrier'))
+            # with doc.create(Subsection('Fault Plane Generated from Inversion NP1')):  
+            #     for date in dates:
+            #         if date.split('/')[-1] in active_ifgms:
+            #             print('__________________HERE_________________')
+            #             link_to_forward_NP1 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_1.png'
+            #             link_to_inversion_NP1 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
+            #             link_to_location_NP1 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
+            #             link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
+
+            #             if os.path.isfile(link_to_location_NP1):
+            #                 with doc.create(Figure(position='ht!')) as pic:
+            #                     pic.add_image(link_to_location_NP1, width='350px')
+            #                     pic.add_caption('Location results for NP1 for dates ' + date.split('/')[-1])
+            # doc.append(NoEscape(r'\FloatBarrier'))
+            # with doc.create(Subsection('SemiVariograms for NP1')):  
+            #     for date in dates:
+            #         if date.split('/')[-1] in active_ifgms:
+            #             print('__________________HERE_________________')
+            #             link_to_forward_NP1 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_1.png'
+            #             link_to_inversion_NP1 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
+            #             link_to_location_NP1 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
+            #             link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
+            #             if os.path.isfile(link_to_semi_varigoram):
+            #                 with doc.create(Figure(position='ht!')) as pic:
+            #                     pic.add_image(link_to_semi_varigoram, width='350px')
+            #                     pic.add_caption('Exponential fit Semivariogram for data with signal mask' + date.split('/')[-1] )
+
+
+        
+
+    path_to_np2_dir = GBIS_Area_path + '/../' + ID + '_NP2'
+    path_to_beachball_NP2 = GBIS_Area_path + '/' + ID +'_InSAR_beachball_NP2.png'
+    print(path_to_np2_dir+'/invert_*')
+    inverts_NP2 = glob.glob(path_to_np2_dir+'/invert_*')
+    for invert in inverts_NP2:
+        if 'location_run' in invert:
+            pass 
+        else:
+            NP2_solution = invert
+    # print(inverts_NP2)
+    NP2_txt_solution = glob.glob(NP2_solution +'/summary*')[0]
+    with open(NP2_txt_solution,'r') as f:
+        lines = f.readlines()
+    lines = lines[7:len(lines)]
+    starting_values = [] 
+    for line in lines:
+        line_list = list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+        # print(line_list)
+        starting_values.append(line_list[-1])
+    # print(float(-starting_values[-8]))
+    # print(float(-starting_values[-7]))
+    rake_start = np.rad2deg(np.arctan2(-float(starting_values[8]),-float(starting_values[7])))
+    rake_start =  round(rake_start, 6)
+    starting_values = [rake_start] + starting_values[0:len(starting_values)-1]
+
+
+    NP2_solution_figures = NP2_solution + '/Figures'
+    data_model_res = glob.glob(NP2_solution_figures + '/*InSAR_Data_Model*')
+    # doc.append(NewPage(1))
+    # doc.preamble.append(NoEscape(r'\clearpage'))
+    doc.append(NoEscape(r'\FloatBarrier'))
+    with doc.create(Section('Inversion Results NP2')):
+        path_to_convergence = NP2_solution_figures + '/Convergence.png'
+        path_to_jointprobs = NP2_solution_figures + '/JointProbabilities.png'
+        path_to_PDF = glob.glob(NP2_solution_figures+'/*DFs*')[0]
+        # print(path_to_PDF)
+        with doc.create(LongTable("l l l l l l l")) as data_table:
+            data_table.add_hline()
+            data_table.add_row(["MODEL PARAM", "OPTIMAL", "MEAN",'MEDIAN','2.5%','97.5%','STARTING'])
+            data_table.add_hline()
+            data_table.end_table_header()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_footer()
+            data_table.add_hline()
+            data_table.add_row((MultiColumn(7, align='r',
+                                data='Not Continued on Next Page'),))
+            data_table.add_hline()
+            data_table.end_table_last_footer()
+            
+            for ii,line in enumerate(lines):
+                row_list =  list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
+                row_list[-1] = starting_values[ii]
+                # print(row_list)
+                data_table.add_row(row_list)
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_jointprobs, width='350px')
+                        pic.add_caption('Joint probabilities NP2 ')
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_convergence, width='350px')
+                        pic.add_caption('Convergence NP2')
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_PDF, width='350px')
+                        pic.add_caption('Probability distibution functions NP2')
+
+        with doc.create(Figure(position='h!')) as pic:
+                        pic.add_image(path_to_beachball_NP2, width='100px')
+                        pic.add_caption('Focal mechanism plot using NP2 solution')
+
+      
+
+        for frame in active_frames:
+            frame_dir_inv = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_INVERSION_Results_NP2')
+            frame_dir_proc = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_processing_report_NP2')
+            dates = [ f.path for f in os.scandir(frame_dir_inv) if f.is_dir() ]
+            downsamp_mosaic = frame_dir_proc + '/All_ifgms_easy_look_up_downsamp.png'
+
+            if os.path.isfile(downsamp_mosaic):
+                with doc.create(Figure(position='h!')) as pic:
+                            pic.add_image(downsamp_mosaic, width='350px')
+                            pic.add_caption('Easy look up of all dates used in inversion.')
+            doc.append(NoEscape(r'\FloatBarrier'))
+            with doc.create(Subsection('USGS Forward Models for All Dates NP2')):
+                for date in dates:
+                    # print(date)
+                    # print(active_ifgms)
+                    if date.split('/')[-1] in active_ifgms:
+                        print('~~~~~~~~~~~~~~~~~~~~HERE~~~~~~~~~~~~~~~~~~~~~~~~')
+                        link_to_forward_NP2 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_2.png'
+                        link_to_inversion_NP2 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
+                        link_to_location_NP2 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
+                        link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
+                        if os.path.isfile(link_to_forward_NP2):
+                            with doc.create(Figure(position='ht!')) as pic:
+                                pic.add_image(link_to_forward_NP2, width='350px')
+                                pic.add_caption('USGS forward model NP2 for dates ' + date.split('/')[-1] )
+            doc.append(NoEscape(r'\FloatBarrier'))
+            with doc.create(Subsection('Model Generated from Inversion NP2')):
+                for date in dates:
+                    # print(date)
+                    # print(active_ifgms)
+                    if date.split('/')[-1] in active_ifgms:
+                        print('~~~~~~~~~~~~~~~~~~~~HERE~~~~~~~~~~~~~~~~~~~~~~~~')
+                        link_to_forward_NP2 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_2.png'
+                        link_to_inversion_NP2 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
+                        link_to_location_NP2 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
+                        link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
+                        if os.path.isfile(link_to_inversion_NP2):
+                            with doc.create(Figure(position='ht!')) as pic:
+                                pic.add_image(link_to_inversion_NP2, width='350px')
+                                pic.add_caption('Inversion results for NP2 for dates ' + date.split('/')[-1])
+            doc.append(NoEscape(r'\FloatBarrier'))
+            with doc.create(Subsection('Fault Plane Generated from Inversion NP2')):
+                for date in dates:
+                    # print(date)
+                    # print(active_ifgms)
+                    if date.split('/')[-1] in active_ifgms:
+                        print('~~~~~~~~~~~~~~~~~~~~HERE~~~~~~~~~~~~~~~~~~~~~~~~')
+                        link_to_forward_NP2 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_2.png'
+                        link_to_inversion_NP2 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
+                        link_to_location_NP2 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
+                        link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
+                        if os.path.isfile(link_to_location_NP2):
+                            with doc.create(Figure(position='ht!')) as pic:
+                                pic.add_image(link_to_location_NP2, width='350px')
+                                pic.add_caption('Location results for NP2 for dates ' + date.split('/')[-1])
+            doc.append(NoEscape(r'\FloatBarrier'))
+            with doc.create(Subsection('Semivarigorams for NP2')):
+                for date in dates:
+                    # print(date)
+                    # print(active_ifgms)
+                    if date.split('/')[-1] in active_ifgms:
+                        print('~~~~~~~~~~~~~~~~~~~~HERE~~~~~~~~~~~~~~~~~~~~~~~~')
+                        link_to_forward_NP2 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_2.png'
+                        link_to_inversion_NP2 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
+                        link_to_location_NP2 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
+                        link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
+                        if os.path.isfile(link_to_semi_varigoram):
+                            with doc.create(Figure(position='ht!')) as pic:
+                                pic.add_image(link_to_semi_varigoram, width='350px')
+                                pic.add_caption('Exponential fit Semivariogram for data with signal mask' + date.split('/')[-1] )
+
+        
+
+    doc.append(NoEscape(r'\FloatBarrier'))    
     with doc.create(Section('Frame info')):
         
         doc.append('Frames Passing Edge and Coherence Removals: ' + '\n')
@@ -203,6 +555,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
             doc.append('\n')
        
         for frame in active_frames:
+            doc.append(NoEscape(r'\FloatBarrier'))
             with doc.create(Subsection(frame)):
                
                 # doc.append(Subsection(frame))
@@ -261,249 +614,27 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
                 link_to_gacos_info = frame_dir_proc +  '/GACOS_info.png'
                 link_to_network_png = frame_dir_proc + '/network11.png'
 
-                with doc.create(Figure(position='h!')) as pic:
-                    pic.add_image(link_to_network_png, width='100px')
-                    pic.add_caption('Network of available coseismic interferograms.')
-
-                with doc.create(Figure(position='h!')) as pic:
-                    pic.add_image(link_to_easy_look_no_gac, width='350px')
-                    pic.add_caption('All coseismic interferograms clipped around intial location run coherence mask applied but no GACOS correction.')
-                with doc.create(Figure(position='h!')) as pic:
-                    pic.add_image(link_to_gacos_info, width='350px')
-                    pic.add_caption('GACOS Standard deviation reduction.')
-                with doc.create(Figure(position='h!')) as pic:
-                    pic.add_image(link_to_easy_look_ifgms, width='350px')
-                    pic.add_caption('All coseismic interferograms clipped around intial location run and with gacos correction and coherence mask applied.')
-                with doc.create(Figure(position='h!')) as pic:
-                    pic.add_image(link_to_easy_look_mask, width='350px')
-                    pic.add_caption('All coseismic interferograms with location run signal mask shown.')
-              
-    path_to_np1_dir = GBIS_Area_path + '/../' + ID + '_NP1'
-    path_to_beachball_NP1 = GBIS_Area_path + '/' + ID +'_InSAR_beachball_NP1.png'
-    # print(path_to_np1_dir+'/invert_*')
-    inverts_NP1 = glob.glob(path_to_np1_dir+'/invert_*')
-    # print(inverts_NP1)
-    for invert in inverts_NP1:
-        if 'location_run' in invert:
-            # print(invert)
-            pass 
-        else:
-            # print(invert)
-            NP1_solution = invert
-    # print(inverts_NP1)
-    NP1_solution_figures = NP1_solution + '/Figures'
-    NP1_txt_solution = glob.glob(NP1_solution +'/summary*')[0]
-    with open(NP1_txt_solution,'r') as f:
-        lines = f.readlines()
-    lines = lines[7:len(lines)]
-    starting_values = [] 
-    for line in lines:
-        line_list = list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
-        # print(line_list)
-        starting_values.append(line_list[-1])
-    # print((starting_values[8]))
-    # print((starting_values[7]))
-    rake_start = np.rad2deg(np.arctan2(-float(starting_values[8]),-float(starting_values[7])))
-    rake_start =  round(rake_start, 6)
-    starting_values = [rake_start] + starting_values[0:len(starting_values)-1]
-
-
-        
-    data_model_res = glob.glob(NP1_solution_figures + '/*InSAR_Data_Model*')
-    doc.append(NewPage(1))
-    # doc.preamble.append(NoEscape(r'\clearpage'))
-    with doc.create(Section('Inversion Results NP1')):
-        path_to_convergence = NP1_solution_figures + '/Convergence.png'
-        path_to_jointprobs = NP1_solution_figures + '/JointProbabilities.png'
-        path_to_PDF = glob.glob(NP1_solution_figures+'/*DFs*')[0]
-        # print(path_to_PDF)
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_jointprobs, width='500px')
-                        pic.add_caption('Joint Probabilities NP1 ')
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_convergence, width='500px')
-                        pic.add_caption('Convergence NP1')
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_PDF, width='500px')
-                        pic.add_caption('Probability distibution functions NP1')
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_beachball_NP1, width='100px')
-                        pic.add_caption('Focal mechanism plot using NP1 solution')
-
-        with doc.create(LongTable("l l l l l l l")) as data_table:
-            data_table.add_hline()
-            data_table.add_row(["MODEL PARAM", "OPTIMAL", "MEAN",'MEDIAN','2.5%','97.5%','STARTING'])
-            data_table.add_hline()
-            data_table.end_table_header()
-            data_table.add_hline()
-            data_table.add_row((MultiColumn(7, align='r',
-                                data='Continued on Next Page'),))
-            data_table.add_hline()
-            data_table.end_table_footer()
-            data_table.add_hline()
-            data_table.add_row((MultiColumn(7, align='r',
-                                data='Not Continued on Next Page'),))
-            data_table.add_hline()
-            data_table.end_table_last_footer()
-            
-        
-            for ii,line in enumerate(lines):
-                row_list =  list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
-                row_list[-1] = starting_values[ii]
-                # print(row_list)
-                data_table.add_row(row_list)
-
-        for frame in active_frames:
-            frame_dir_inv = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_INVERSION_Results_NP1')
-            frame_dir_proc = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_processing_report_NP1')
-            dates = [ f.path for f in os.scandir(frame_dir_inv) if f.is_dir() ]
-            downsamp_mosaic = frame_dir_proc + '/All_ifgms_easy_look_up_downsamp.png'
-            
-            with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(downsamp_mosaic, width='350px')
-                        pic.add_caption('Easy look up of all dates used in inversion.' )
-
-            for date in dates:
-                print(date)
-                print(active_ifgms)
-                if date.split('/')[-1] in active_ifgms:
-                    print('__________________HERE_________________')
-                    link_to_forward_NP1 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_1.png'
-                    link_to_inversion_NP1 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
-                    link_to_location_NP1 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
-                    link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
-
-
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_forward_NP1, width='350px')
-                        print(link_to_forward_NP1)
-                        pic.add_caption('USGS forward model nodal plane one for dates ' + date.split('/')[-1] )
-
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_inversion_NP1, width='350px')
-                        pic.add_caption('Inversion results for NP1 for dates ' + date.split('/')[-1])
-
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_semi_varigoram, width='350px')
-                        pic.add_caption('Exponential fit Semivariogram for data with signal mask' + date.split('/')[-1] )
-                    
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_location_NP1, width='350px')
-                        pic.add_caption('Inversion results for NP2 for dates ' + date.split('/')[-1])
-
-
-        
-
-    path_to_np2_dir = GBIS_Area_path + '/../' + ID + '_NP2'
-    path_to_beachball_NP2 = GBIS_Area_path + '/' + ID +'_InSAR_beachball_NP2.png'
-    print(path_to_np2_dir+'/invert_*')
-    inverts_NP2 = glob.glob(path_to_np2_dir+'/invert_*')
-    for invert in inverts_NP2:
-        if 'location_run' in invert:
-            pass 
-        else:
-            NP2_solution = invert
-    # print(inverts_NP2)
-    NP2_txt_solution = glob.glob(NP2_solution +'/summary*')[0]
-    with open(NP2_txt_solution,'r') as f:
-        lines = f.readlines()
-    lines = lines[7:len(lines)]
-    starting_values = [] 
-    for line in lines:
-        line_list = list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
-        # print(line_list)
-        starting_values.append(line_list[-1])
-    # print(float(-starting_values[-8]))
-    # print(float(-starting_values[-7]))
-    rake_start = np.rad2deg(np.arctan2(-float(starting_values[8]),-float(starting_values[7])))
-    rake_start =  round(rake_start, 6)
-    starting_values = [rake_start] + starting_values[0:len(starting_values)-1]
-
-
-    NP2_solution_figures = NP2_solution + '/Figures'
-    data_model_res = glob.glob(NP2_solution_figures + '/*InSAR_Data_Model*')
-    doc.append(NewPage(1))
-    # doc.preamble.append(NoEscape(r'\clearpage'))
-    with doc.create(Section('Inversion Results NP2')):
-        path_to_convergence = NP2_solution_figures + '/Convergence.png'
-        path_to_jointprobs = NP2_solution_figures + '/JointProbabilities.png'
-        path_to_PDF = glob.glob(NP2_solution_figures+'/*DFs*')[0]
-        # print(path_to_PDF)
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_jointprobs, width='500px')
-                        pic.add_caption('Joint probabilities NP2 ')
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_convergence, width='500px')
-                        pic.add_caption('Convergence NP2')
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_PDF, width='500px')
-                        pic.add_caption('Probability distibution functions NP2')
-
-        with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(path_to_beachball_NP2, width='100px')
-                        pic.add_caption('Focal mechanism plot using NP2 solution')
-
-        with doc.create(LongTable("l l l l l l l")) as data_table:
-            data_table.add_hline()
-            data_table.add_row(["MODEL PARAM", "OPTIMAL", "MEAN",'MEDIAN','2.5%','97.5%','STARTING'])
-            data_table.add_hline()
-            data_table.end_table_header()
-            data_table.add_hline()
-            data_table.add_row((MultiColumn(7, align='r',
-                                data='Continued on Next Page'),))
-            data_table.add_hline()
-            data_table.end_table_footer()
-            data_table.add_hline()
-            data_table.add_row((MultiColumn(7, align='r',
-                                data='Not Continued on Next Page'),))
-            data_table.add_hline()
-            data_table.end_table_last_footer()
-            
-            for ii,line in enumerate(lines):
-                row_list =  list(filter(bool,line.replace('\n','').replace('\t','').split(' ')))
-                row_list[-1] = starting_values[ii]
-                # print(row_list)
-                data_table.add_row(row_list)
-
-        for frame in active_frames:
-            frame_dir_inv = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_INVERSION_Results_NP2')
-            frame_dir_proc = os.path.join(GBIS_Area_path,'GEOC_' + frame + '_processing_report_NP2')
-            dates = [ f.path for f in os.scandir(frame_dir_inv) if f.is_dir() ]
-            downsamp_mosaic = frame_dir_proc + '/All_ifgms_easy_look_up_downsamp.png'
-
-            with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(downsamp_mosaic, width='350px')
-                        pic.add_caption('Easy look up of all dates used in inversion.')
-
-            for date in dates:
-                # print(date)
-                # print(active_ifgms)
-                if date.split('/')[-1] in active_ifgms:
-                    print('~~~~~~~~~~~~~~~~~~~~HERE~~~~~~~~~~~~~~~~~~~~~~~~')
-                    link_to_forward_NP2 = frame_dir_proc +  '/' + date.split('/')[-1]+'forward_model_comp_2.png'
-                    link_to_inversion_NP2 =  frame_dir_inv + '/' + date.split('/')[-1] + '/output_model_comp.png'
-                    link_to_location_NP2 = frame_dir_inv + '/' + date.split('/')[-1] + '/2D_locations_plot.png'
-                    link_to_semi_varigoram = frame_dir_proc +  '/' + 'semivarigram' + date.split('/')[-1] + 'X.png'
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_forward_NP2, width='350px')
-                        pic.add_caption('USGS forward model NP2 for dates ' + date.split('/')[-1] )
-
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_inversion_NP2, width='350px')
-                        pic.add_caption('Inversion results for NP2 for dates ' + date.split('/')[-1])
-                    
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_semi_varigoram, width='350px')
-                        pic.add_caption('Exponential fit Semivariogram for data with signal mask' + date.split('/')[-1] )
-
-                    with doc.create(Figure(position='h!')) as pic:
-                        pic.add_image(link_to_location_NP2, width='350px')
-                        pic.add_caption('Inversion results for NP2 for dates ' + date.split('/')[-1])
-
-        
-
-        
-        
+                if os.path.isfile(link_to_network_png):
+                    with doc.create(Figure(position='ht!')) as pic:
+                        pic.add_image(link_to_network_png, width='100px')
+                        pic.add_caption('Network of available coseismic interferograms.')
+                if os.path.isfile(link_to_easy_look_no_gac):
+                    with doc.create(Figure(position='ht!')) as pic:
+                        pic.add_image(link_to_easy_look_no_gac, width='350px')
+                        pic.add_caption('All coseismic interferograms clipped around intial location run coherence mask applied but no GACOS correction.')
+                if  os.path.isfile(link_to_gacos_info):
+                    with doc.create(Figure(position='ht!')) as pic:
+                        pic.add_image(link_to_gacos_info, width='350px')
+                        pic.add_caption('GACOS Standard deviation reduction.')
+                if os.path.isfile(link_to_easy_look_ifgms):
+                    with doc.create(Figure(position='ht!')) as pic:
+                        pic.add_image(link_to_easy_look_ifgms, width='350px')
+                        pic.add_caption('All coseismic interferograms clipped around intial location run and with gacos correction and coherence mask applied.')
+                if os.path.isfile(link_to_easy_look_mask):
+                    with doc.create(Figure(position='ht!')) as pic:
+                        pic.add_image(link_to_easy_look_mask, width='350px')
+                        pic.add_caption('All coseismic interferograms with location run signal mask shown.')
+                  
         
 
 
@@ -567,6 +698,7 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
         # print(inv_date_NP2)
 
     # doc.generate_pdf( clean_tex=True)
+    
     doc.generate_pdf(GBIS_Area_path+'/Final_report', clean_tex=False, compiler='pdflatex',silent=True)
     # doc.generate_pdf('test')
       
@@ -578,7 +710,7 @@ def hyperlink(url,text):
 
 
 if __name__=='__main__':
-    generateReport('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us7000mbuv_GBIS_area','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us7000mbuv_NP1','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us7000mbuv_NP2','us7000mbuv')
+    generateReport('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000abnv_GBIS_area','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000abnv_NP1','/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000abnv_NP2','us6000abnv')
     
     full_test = [
                 'us60007anp',

@@ -507,7 +507,7 @@ def check_edge_of_frame(ifgix):
         print(percentage_nans)
     # print(nan_in_circle)
     # print(none_nan_in_circle)
-    if percentage_nans >=0.5:
+    if percentage_nans >=0.45:
         bad_dates  = (ifgd)
         print('removing this date')
         print(ifgd)
