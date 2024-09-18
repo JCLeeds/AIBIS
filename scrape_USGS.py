@@ -333,7 +333,13 @@ class USGS_event:
     def create_beachball(self):
         from obspy.imaging.beachball import beachball 
         figure = plt.figure()
-        figure.suptitle('USGS Fault Mechanism')
+        figure.suptitle('USGS Fault Mechanism: NP1 Strike: ' + 
+                        str(round(float(self.strike_dip_rake['strike'][0]),2)) +
+                        ' Dip: ' + str(round(float(self.strike_dip_rake['dip'][0]),2))+ 
+                        ' Rake: '  +str(round(float(self.strike_dip_rake['rake'][0]),2)) + '\n'
+                        'NP2 Strike: ' +  str(round(float(self.strike_dip_rake['strike'][1]),2)) +
+                        ' Dip: ' + str(round(float(self.strike_dip_rake['dip'][1]),2))+ 
+                        ' Rake: ' + str(round(float(self.strike_dip_rake['rake'][1]),2)))
         mt = [self.strike_dip_rake['strike'][0],self.strike_dip_rake['dip'][0],self.strike_dip_rake['rake'][0]]
         beachball(mt,size=200,linewidth=2,facecolor='r',fig=figure)
         figure.savefig(os.path.join(self.LiCS_locations,self.ID+'_Seismic_beachball.png'))
@@ -422,7 +428,8 @@ class USGS_event:
             if checker == True and np.max(np.array(widths)) < (111.13*0.5*1e3/3):
                 widths =  [111.13*0.5*1e3/3]
             
-            if checker == True and np.max(np.array(widths)) > (111.13*2*1e3)/3:
+            if checker == True and np.max(np.array(widths)) > (111.13*1*1e3)/3:
+                print('MASK IS HERE')
                 widths = [111.13*1*1e3/4]
             # checker = [x if len(widths)>0 else len(widths) == 0]
             # print(len)

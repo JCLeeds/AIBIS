@@ -207,7 +207,17 @@ def forward_modelling_2D_plot(resampled_terrain,gradiant_terrain,ifgix):
  
     
     pygmt.makecpt(cmap='oleron',series=topo_cpt_series, continuous=True,output=topo_output_cpt,background=True) 
-    pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True) 
+    # pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True) 
+
+    if np.abs(min_data) > max_data:
+        range_limit = np.abs(min_data)
+    else:
+        range_limit = max_data    
+
+    if range_limit > 2:
+        range_limit = 1
+
+    pygmt.makecpt(series=[-range_limit, range_limit], cmap="polar",output=cmap_output_data)
 
     fig = pygmt.Figure()
     pygmt.config(MAP_FRAME_TYPE="plain")
@@ -230,7 +240,7 @@ def forward_modelling_2D_plot(resampled_terrain,gradiant_terrain,ifgix):
                         y=lats_vertex[:-2],
                         pen='1p,black',
                         fill='gray',
-                        transparency=20,
+                        transparency=60,
                         region=region,
                         projection='M8c',
                         )
@@ -254,7 +264,7 @@ def forward_modelling_2D_plot(resampled_terrain,gradiant_terrain,ifgix):
              fill='white')
     font = "2p,Helvetica-Bold"
     fig.text(x=locations[0], y=locations[1] + np.abs(0.001*locations[1]), text="USGS", font=font, region=region,projection='M8c',fill="white")
-    fig.colorbar(frame=["x+lLOS displacment(m)", "y+lm"], position="JMB",projection='M8c') # ,panel=[1,0]
+    fig.colorbar(frame=["x+lLOS Displacement(m)", "y+lm"], position="JMB",projection='M8c') # ,panel=[1,0]
     # fig_2D.savefig('2D_test.png')
     print('saving figure')
     fig.savefig(os.path.join(out_dir1,'2D_locations_plot.png'))

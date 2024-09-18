@@ -122,6 +122,11 @@ def calc_semi_para(ifgix):
         # ifgm[abs(ifgm) > (semi_mask_thresh)] = np.nan
         ifgm_nan = ifgm.copy()
         ifgm_deramp = ifgm.copy()
+
+        # Detrend code written by J Condon NEEDS CHECKING THIS HAS BEEN ADDED SINCE WORKING RUN REMOVE IF BREAKS CODE 
+        Afit, m = LiCS_tools.fit2d(ifgm,w=None,deg="1")
+        ifgm = np.subtract(ifgm, Afit) 
+
         ifgm = ifgm.flatten()
         # Drop all nan data
         xdist = XX[~np.isnan(ifgm)]
@@ -132,9 +137,10 @@ def calc_semi_para(ifgix):
 
 
         # ifgm = scipy.signal.detrend(ifgm)
-        # Detrend code written by J Condon  
-        ifgm_deramp, ydist, xdist = LiCS_tools.invert_plane(ifgm,ydist,xdist)
-        ifgm = ifgm_deramp
+  
+        
+        # ifgm_deramp, ydist, xdist = LiCS_tools.invert_plane(ifgm,ydist,xdist)
+        # ifgm = ifgm_deramp
     
 
         # calc from lmfit
@@ -252,11 +258,11 @@ def calc_semi_para(ifgix):
         im = ax.imshow(ifgm_nan)
         plt.title('NaN {}'.format(ifgd))
         fig.colorbar(im, ax=ax)
-        ax=fig.add_subplot(2,2,3)
-        im = ax.scatter(xdist,ydist,c=ifgm_deramp) # remeber this might be breaking my code
-        plt.title('NaN + Deramp {}'.format(ifgd))
+        # ax=fig.add_subplot(2,2,3)
+        # im = ax.scatter(xdist,ydist,c=ifgm) # remeber this might be breaking my code
+        # plt.title('NaN + Deramp {}'.format(ifgd))
         fig.colorbar(im, ax=ax)
-        ax=fig.add_subplot(2,2,4)
+        ax=fig.add_subplot(2,2,3)
         im = ax.scatter(bincenters, medians, c=sigma, label=ifgd)
         ax.plot(bincenters, model_semi, label='{} model'.format(ifgd))
         fig.colorbar(im, ax=ax)

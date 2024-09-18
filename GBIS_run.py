@@ -48,6 +48,7 @@ import datetime
 import local2llh as l2llh
 import glob
 import output_location_comp as olc
+import llh2local as llh2l
 
 
 
@@ -89,12 +90,15 @@ class auto_GBIS:
         self.estimate_length = self.calc_square_start()
         self.max_dist = self.maximum_dist()
         self.boundingbox = self.calc_boundingbox()
+        self.y_lower,self.y_upper,self.x_lower,self.x_upper = self.boundingBox_meters()
         self.create_insar_input()
         if location_search:
             self.edit_input_priors_wide_seach(NP=NP)
         else:
             self.edit_input_priors(NP=NP)
+      
         self.opt_model, self.GBIS_lon, self.GBIS_lat = self.gbisrun()
+ 
         # self.plot_locations()
         self.create_catalog_entry(NP)
         self.create_beachball_InSAR(NP)
@@ -186,7 +190,11 @@ class auto_GBIS:
             min_lons.append(np.min(self.data[ii]['lonlat'][:,0]))
         
         # boundingbox = [round(np.max(min_lons),4)+0.0001,round(np.min(max_lats),4)-0.0001,round(np.min(max_lons),4)-0.0001,round(np.max(min_lats),4)+0.0001]
-        boundingbox = [np.max(min_lons),np.min(max_lats),np.min(max_lons),np.max(min_lats)]
+        # boundingbox = [np.max(min_lons),np.min(max_lats),np.min(max_lons),np.max(min_lats)]
+        boundingbox = [np.min(min_lons),np.max(max_lats),np.max(max_lons),np.min(min_lats)]
+        # ll = [lons.flatten(),lats.flatten()]
+        # ll = np.array(ll,dtype=float)
+        # xy = llh.llh2local(ll,np.array([locations[1],locations[0]],dtype=float))
         #    referance = [np.median(lics_mat['Lon']), np.median(lics_mat['Lat'])]
         return boundingbox
 
@@ -211,8 +219,45 @@ class auto_GBIS:
             max_dists.append((np.sqrt((np.max(self.data[ii]['lonlat_m'][:,0]) - np.min(self.data[ii]['lonlat_m'][:,0])) ** 2
                                 + (np.max(self.data[ii]['lonlat_m'][:,1]) - np.max(self.data[ii]['lonlat_m'][:,1])) ** 2)))
         max_dist = np.min(max_dists) # edited from mean to min 
-            
+           
         return max_dist
+
+    def boundingBox_meters(self):
+        for ii in range(len(self.data)):
+            ref_location = [float(self.DaN_object.event_object.time_pos_depth['Position'][1]),float(self.DaN_object.event_object.time_pos_depth['Position'][0])]
+            ll = [self.data[ii]['lonlat'][:,0].flatten(),self.data[ii]['lonlat'][:,1].flatten()]
+            ll = np.array(ll,dtype=float)
+            xy = llh2l.llh2local(ll,np.array([ref_location[0],ref_location[1]],dtype=float)) # CHANGE BACK
+            xx_vec = xy[0,:]
+            yy_vec = xy[1,:]
+            
+            max_lats = [] 
+            min_lats = [] 
+            max_lons = [] 
+            min_lons = [] 
+        
+            max_lats.append(np.max(yy_vec))
+            min_lats.append(np.min(yy_vec))
+            max_lons.append(np.max(xx_vec))
+            min_lons.append(np.min(xx_vec))
+            # name = 'testnpzformetergrid' + str(ii) +'.npz'
+            # np.savez(tmpnpz_gbis_format, xy=xy,ll=ll)
+
+        boundingbox = [np.max(min_lons),np.min(max_lats),np.min(max_lons),np.max(min_lats)]
+        y_lower,y_upper,x_lower,x_upper = np.max(min_lats) + 5000, np.min(max_lats)-5000, np.max(min_lons)+5000, np.min(max_lons)-5000
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~LOOKY LOOOKY--------------------------')
+        print(y_lower)
+        print(y_upper)
+        print(x_lower)
+        print(x_upper)
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~LOOKY LOOOKY--------------------------')
+        # print(xy)
+        # # break 
+        # y_lower,y_upper,x_lower,x_upper = [1000,1000,1000,1000]
+        # boundingbox = [np.max(min_lons),np.min(max_lats),np.min(max_lons),np.max(min_lats)]
+        #    referance = [np.median(lics_mat['Lon']), np.median(lics_mat['Lat'])]
+        return y_lower,y_upper,x_lower,x_upper
+
     
     def show_noise_params(self):
         label = []
@@ -246,7 +291,16 @@ class auto_GBIS:
         plt.scatter(label,nugs)
         plt.savefig(os.path.join(self.path_to_data,'File_nug_comp.png'))
         return 
+    # def nan_across_frame_checker(self):
+    #     ''' If for a frame with over 3 images there is a nan in 2/3 change the final frame value to nan, fixes rouge pixels in water issue, may introduce errors at center of EQs'''
+    #     total_frames = [] 
+    #     for ii in range(len(self.GBIS_mat_file_location)):
+    #         frame = self.GBIS_mat_file_location[ii].split('/')[-1].split('_floatml_')[0].replace('GEOC_', '')
+    #         total_frames.append(frame)
+    #     total_frames = list(set(total_frames))
+    #     for frame in total_frames:
 
+    #     return 
     def create_insar_input(self):
         input_loc = self.GBIS_input_loc
         
@@ -304,11 +358,13 @@ class auto_GBIS:
         index_to_keep = [] 
         for frame in total_frames: 
             frame_df = data_df[data_df['frame'] == frame]
-            if len(frame_df) > 2 and len(frame) > 3:
+            if len(frame_df) > 2 and len(list(set(total_frames))) > 3:
                 index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.min()].index.values)
-            elif len(frame_df) > 2 and len(frame) > 1:
+            elif len(frame_df) > 2 and len(list(set(total_frames))) > 1:
                 index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.min()].index.values)
-                index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(2).iloc[-2]].index.values)
+                index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(2).iloc[-1]].index.values)
+                print(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(2).iloc[-2]])
+                print('IM IN THIS ELIF STATEMENT')
                 # index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(3).iloc[-1]].index.values)
                 # index_to_keep.append(frame_df[frame_df.tbl == frame_df.tbl.nsmallest(4).iloc[-1]].index.values)
             else:
@@ -350,10 +406,10 @@ class auto_GBIS:
                                 'insar{insarID}.dataPath = ' +' \'' + self.GBIS_mat_file_location[ii] + '\'' +';' + '\n' + 
                                 'insar{insarID}.wavelength = 0.056;' + '\n' +
                                 'insar{insarID}.constOffset = \'y\';' + '\n' +
-                                'insar{insarID}.rampFlag = \'y\';' +   '\n' +
+                                'insar{insarID}.rampFlag = \'n\';' +   '\n' +
                                 'insar{insarID}.sillExp =' + str(self.sill_nug_range[ii][0]) +';' + '\n' +
                                 'insar{insarID}.range =' + str(self.sill_nug_range[ii][2]) +';' + '\n' +
-                                'insar{insarID}.nugget=' + str(self.sill_nug_range[ii][1]) +';' + '\n'+ 
+                                'insar{insarID}.nugget=' + str(np.abs(self.sill_nug_range[ii][1])) +';' + '\n'+ 
                                 'insar{insarID}.quadtreeThresh = 0;' +'\n')
             
         with open(input_loc, 'w') as file:
@@ -397,18 +453,18 @@ class auto_GBIS:
         # L = 8000
         slip = L*slip_rate
 
-        DS1 = np.sin(rake1*np.pi/180) * slip 
-        SS1 = np.cos(rake1*np.pi/180) * slip
+        DS1 = np.sin(rake1*np.pi/180) * slip * -1
+        SS1 = np.cos(rake1*np.pi/180) * slip * -1
 
-        DS2 = np.sin(rake2*np.pi/180) * slip 
-        SS2 = np.cos(rake2*np.pi/180) * slip
+        DS2 = np.sin(rake2*np.pi/180) * slip * -1
+        SS2 = np.cos(rake2*np.pi/180) * slip * -1
 
 
         
         # if -dip1 - 30 < -90:
         #     dip1 = 0 
-        dip1_lower = -dip1 - 22.5
-        dip2_lower = -dip2 - 22.5
+        dip1_lower = -dip1 - 30
+        dip2_lower = -dip2 - 30
         if dip1_lower < -89.9:
             dip1_lower = -89.9 
         if dip2_lower < -89.9:
@@ -416,8 +472,8 @@ class auto_GBIS:
 
         
                 # Capping dip at 15 deg this removes convergance to a non physically shallow dipping source, This will need revisiting.
-        dip1_upper = -dip1 + 22.5
-        dip2_upper = -dip2 + 22.5
+        dip1_upper = -dip1 + 30
+        dip2_upper = -dip2 + 30
         if dip1_upper > -1:
             dip1_upper = -5 
         if dip2_upper > -1:
@@ -435,10 +491,10 @@ class auto_GBIS:
         
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  " + str(strike2))
 
-        strike_upper1 = (strike1 + 75)  % 360 
-        strike_upper2 = (strike2 + 75) % 360 
-        strike_lower1 = (strike1 - 75) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
-        strike_lower2 = (strike2 - 75) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
+        strike_upper1 = (strike1 + 40)  % 360 
+        strike_upper2 = (strike2 + 40) % 360 
+        strike_lower1 = (strike1 - 40) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
+        strike_lower2 = (strike2 - 40) # needs to allow for a negative lower bound so that 3rd to 4th quadrant can be scanned over 
 
         if strike_upper1 == 0:
             strike_upper1 = strike_upper1 + 360 
@@ -529,12 +585,14 @@ class auto_GBIS:
                 #     strike_bound = strike_upper1
                 lines[ii] = ('modelInput.fault.lower=['
                             + str(int(self.estimate_length*0.5)) + ';  ' 
-                            + str(int(self.estimate_length*0.5)) + ';  '
+                            + str(int(self.estimate_length*0.15)) + ';  '
                             + str(int(depth_lower)) + ';  '
                             + str(dip1_lower) + ';  '
                             + str(int(strike_lower1)) + ';  '
-                            + str(int(-self.max_dist/4)) + ';  '
-                            + str(int(-self.max_dist/4)) + ';  '
+                            + str(int(-self.max_dist/5)) + ';  '
+                            + str(int(-self.max_dist/5)) + ';  '
+                            # + str(self.x_lower) + ';  '
+                            # + str(self.y_lower) + ';  '
                             + str(SS1 - 4) + ';  '
                             + str(DS1 - 4) + '];'
                             +'\n'
@@ -547,12 +605,14 @@ class auto_GBIS:
                 #     strike_bound = strike_upper2
                 lines[ii] = ('modelInput.fault.lower=['
                             + str(int(self.estimate_length*0.5)) + ';  ' 
-                            + str(int(self.estimate_length*0.25)) + ';  '
+                            + str(int(self.estimate_length*0.15)) + ';  '
                             + str(int(depth_lower)) + ';  '
                             + str(dip2_lower) + ';  '
                             + str(int(strike_lower2)) + ';  '
-                            + str(int(-self.max_dist/4)) + ';  '
-                            + str(int(-self.max_dist/4)) + ';  '
+                            + str(int(-self.max_dist/5)) + ';  '
+                            + str(int(-self.max_dist/5)) + ';  '
+                            # + str(self.x_lower) + ';  '
+                            # + str(self.y_lower) + ';  '
                             + str(SS2 - 5) + ';  '
                             + str(DS2 - 5) + '];'
                             '\n'
@@ -564,13 +624,15 @@ class auto_GBIS:
                 # else:
                 #     strike_bound = strike_upper1
                 lines[ii] = ('modelInput.fault.upper=['
-                            + str(int(self.estimate_length*2.5)) + ';  ' 
-                            + str(int(self.estimate_length*5)) + ';  '
+                            + str(int(self.estimate_length*5)) + ';  ' 
+                            + str(int(self.estimate_length*2.5)) + ';  '
                             + str(int(depth*2)) + ';  '
                             + str(int(dip1_upper)) + ';  '
                             + str(int(strike_upper1)) + ';  '
-                            + str(int(self.max_dist/4)) + ';  '
-                            + str(int(self.max_dist/4)) + ';  '
+                            + str(int(self.max_dist/5)) + ';  '
+                            + str(int(self.max_dist/5)) + ';  '
+                            # + str(self.x_upper) + ';  '
+                            # + str(self.y_upper) + ';  '
                             + str(SS1 + 5) + ';  '
                             + str(DS1 + 5) + '];'
                             '\n'
@@ -582,13 +644,15 @@ class auto_GBIS:
                 # else:
                 #     strike_bound = strike_upper2
                 lines[ii] = ('modelInput.fault.upper=['
-                            + str(int(self.estimate_length*2.5)) + ';  ' 
-                            + str(int(self.estimate_length*5)) + ';  '
+                            + str(int(self.estimate_length*5)) + ';  ' 
+                            + str(int(self.estimate_length*2.5)) + ';  '
                             + str(int(depth*2)) + ';  '
                             + str(int(dip2_upper)) + ';  '
                             + str(int(strike_upper2)) + ';  '
-                            + str(int(self.max_dist/4)) + ';  '
-                            + str(int(self.max_dist/4)) + ';  '
+                            + str(int(self.max_dist/5)) + ';  '
+                            + str(int(self.max_dist/5)) + ';  '
+                            # + str(self.x_upper) + ';  '
+                            # + str(self.y_upper) + ';  '
                             + str(SS2 + 5) + ';  '
                             + str(DS2 + 5) + '];'
                             '\n'
@@ -1041,6 +1105,7 @@ class auto_GBIS:
                     except Exception as e:
                         print(e)
                         print('Well we failed to generate a report my Friend, moving on swiftly nothing to see here')
+                        pass
 
 
 
@@ -1135,21 +1200,26 @@ class auto_GBIS:
         
         if isinstance(self.DaN_object.geoc_final_path,list):
             for ii in range(len(self.DaN_object.geoc_clipped_path)):
-                final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[ii].split('/')[-1].split('floatml')[0] + "INVERSION_Results_NP" + str(NP))
-                # final_path = self.DaN_object.geoc_final_path[ii] + "_INVERSION_Results"
-
-                om.output_model(self.DaN_object.geoc_clipped_path[ii],
-                                final_path,
-                                self.opt_model,
-                                [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
-                                self.opt_model_vertex)
+                try:
+                    final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[ii].split('/')[-1].split('floatml')[0] + "INVERSION_Results_NP" + str(NP))
+                    # final_path = self.DaN_object.geoc_final_path[ii] + "_INVERSION_Results"
+                    om.output_model(self.DaN_object.geoc_clipped_path[ii],
+                                    final_path,
+                                    self.opt_model,
+                                    [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
+                                    self.opt_model_vertex)
+                except:
+                    pass
             else:
-                final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[0].split('/')[-1].split('floatml')[0]+ "INVERSION_Results_NP" + str(NP))
-                om.output_model(self.DaN_object.geoc_clipped_path[0],
-                                final_path,
-                                self.opt_model,
-                                [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
-                                self.opt_model_vertex)
+                try:
+                    final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[0].split('/')[-1].split('floatml')[0]+ "INVERSION_Results_NP" + str(NP))
+                    om.output_model(self.DaN_object.geoc_clipped_path[0],
+                                    final_path,
+                                    self.opt_model,
+                                    [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
+                                    self.opt_model_vertex)
+                except:
+                    pass
 
             
         return 
@@ -1167,23 +1237,29 @@ class auto_GBIS:
 
         if isinstance(self.DaN_object.geoc_final_path,list):
             for ii in range(len(self.DaN_object.geoc_clipped_path)):
-                final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[ii].split('/')[-1].split('floatml')[0] + "INVERSION_Results_NP" + str(NP))
-                # final_path = self.DaN_object.geoc_final_path[ii] + "_INVERSION_Results"
-                olc.output_location_comp(self.DaN_object.geoc_clipped_path[ii],
-                                final_path,
-                                self.opt_model,
-                                [lon,lat],
-                                self.opt_model_vertex)
+                try:
+                    final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[ii].split('/')[-1].split('floatml')[0] + "INVERSION_Results_NP" + str(NP))
+                    # final_path = self.DaN_object.geoc_final_path[ii] + "_INVERSION_Results"
+                    olc.output_location_comp(self.DaN_object.geoc_clipped_path[ii],
+                                    final_path,
+                                    self.opt_model,
+                                    [lon,lat],
+                                    self.opt_model_vertex)
+                except:
+                    pass 
 
                            
         else:
-            final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[0].split('/')[-1].split('floatml')[0]+ "INVERSION_Results_NP" + str(NP))
-            olc.output_location_comp(self.DaN_object.geoc_clipped_path[0],
-                                final_path,
-                                self.opt_model,
-                                [lon,lat],
-                                self.opt_model_vertex)
-        
+            try:
+                final_path = os.path.join(self.DaN_object.event_object.GBIS_location,self.DaN_object.geoc_clipped_path[0].split('/')[-1].split('floatml')[0]+ "INVERSION_Results_NP" + str(NP))
+                olc.output_location_comp(self.DaN_object.geoc_clipped_path[0],
+                                    final_path,
+                                    self.opt_model,
+                                    [lon,lat],
+                                    self.opt_model_vertex)
+            except:
+                pass
+            
 
 
 
@@ -1197,6 +1273,16 @@ class auto_GBIS:
             print('created directory')
 
         catalog= self.path_to_data+'/'+ self.DaN_object.event_object.ID+'_catalog_entry' + '/' +self.DaN_object.event_object.ID+ '_entry_NP' + str(NP)+ '.csv'
+        
+        input_loc = self.GBIS_input_loc
+
+        with open(self.DaN_object.event_object.event_file_path,'r') as file:
+            params = file.readlines()
+        
+        USGS_latitude = float(params[2].split('=')[-1])
+        USGS_longitude = float(params[3].split('=')[-1])
+
+        
         if NP == 1:
             strike = self.opt_model[4] - 180 
             if strike < 360:
@@ -1213,8 +1299,8 @@ class auto_GBIS:
             dict_for_catalog ={'USGS_ID': self.DaN_object.event_object.ID,
                                'NP_selected': NP,
                                 'USGS_Mag': self.DaN_object.event_object.MTdict['magnitude'],
-                                'USGS_Lat': self.DaN_object.event_object.time_pos_depth['Position'][0],
-                                'USGS_Lon': self.DaN_object.event_object.time_pos_depth['Position'][1],
+                                'USGS_lat': USGS_latitude,
+                                'USGS_lon': USGS_longitude,
                                 'USGS_Depth': self.DaN_object.event_object.time_pos_depth['Depth'],
                                 'USGS_Moment_Depth': self.DaN_object.event_object.MTdict['Depth_MT'],
                                 'USGS_Strike': self.DaN_object.event_object.strike_dip_rake['strike'][0],
@@ -1222,6 +1308,8 @@ class auto_GBIS:
                                 'USGS_Rake': self.DaN_object.event_object.strike_dip_rake['rake'][0],
                                 'Nifgms': len(self.InSAR_codes),
                                 'NFrames': len(self.DaN_object.geoc_final_path),
+                                'Location_run_Lat': self.DaN_object.event_object.time_pos_depth['Position'][0],
+                                'Location_run_Lon': self.DaN_object.event_object.time_pos_depth['Position'][1],
                                 'InSAR_Lat': self.GBIS_lat,
                                 'InSAR_Lon': self.GBIS_lon,
                                 'InSAR_Depth TR': self.opt_model[2],
@@ -1250,8 +1338,8 @@ class auto_GBIS:
             dict_for_catalog ={'USGS_ID': self.DaN_object.event_object.ID,
                                 'NP_selected': NP,
                                 'USGS_Mag': self.DaN_object.event_object.MTdict['magnitude'],
-                                'USGS_Lat': self.DaN_object.event_object.time_pos_depth['Position'][0],
-                                'USGS_Lon': self.DaN_object.event_object.time_pos_depth['Position'][1],
+                                'USGS_lat': USGS_latitude,
+                                'USGS_lon': USGS_longitude,
                                 'USGS_Depth': self.DaN_object.event_object.time_pos_depth['Depth'],
                                 'USGS_Moment Depth': self.DaN_object.event_object.MTdict['Depth_MT'],
                                 'USGS_Strike': self.DaN_object.event_object.strike_dip_rake['strike'][1],
@@ -1259,6 +1347,8 @@ class auto_GBIS:
                                 'USGS_Rake': self.DaN_object.event_object.strike_dip_rake['rake'][1],
                                 'Nifgms': len(self.InSAR_codes),
                                 'NFrames': len(self.DaN_object.geoc_final_path),
+                                'Location_run_Lat': self.DaN_object.event_object.time_pos_depth['Position'][0],
+                                'Location_run_Lon': self.DaN_object.event_object.time_pos_depth['Position'][1],
                                 'InSAR_Lat': self.GBIS_lat,
                                 'InSAR_Lon': self.GBIS_lon,
                                 'InSAR_Depth TR': self.opt_model[2],
@@ -1310,15 +1400,15 @@ class auto_GBIS:
     
     def create_beachball_InSAR(self,NP):
         from obspy.imaging.beachball import beachball 
-        strike = self.opt_model[4] + 180 
-        if strike > 360:
-                strike  = strike - 360
+        strike = (self.opt_model[4] + 180) % 360
+        # if strike > 360:
+        #         strike  = strike - 360
         Dip = -self.opt_model[3]
         SS = self.opt_model[7]
         DS = self.opt_model[8]
         rake = np.degrees(np.arctan2(-DS,-SS))
         figure = plt.figure()
-        figure.suptitle('InSAR Fault Mechanism  strike: ' + str(strike)+' Dip: ' + str(Dip) + ' Rake: ' + str(rake))
+        figure.suptitle('InSAR Fault Mechanism  strike: ' + str(round(strike, 2))+' Dip: ' + str(round(Dip, 2)) + ' Rake: ' + str(round(rake, 2)))
         mt = [strike,Dip,rake]
         beachball(mt,size=200,linewidth=2,facecolor='r',fig=figure)
         figure.savefig(os.path.join(self.path_to_data,self.DaN_object.event_object.ID+'_InSAR_beachball_NP' +str(NP)+'.png'))

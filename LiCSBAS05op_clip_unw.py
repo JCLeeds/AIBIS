@@ -184,8 +184,24 @@ def main(argv=None,auto=None,index_clip=False):
     lon1 = float(io_lib.get_param_par(dempar, 'corner_lon')) # west
     postlat = float(io_lib.get_param_par(dempar, 'post_lat')) # negative
     postlon = float(io_lib.get_param_par(dempar, 'post_lon')) # positive
+    # dlat = float(LiCS_lib.get_param_par(dempar, 'post_lat')) #negative
+    # dlon = float(LiCS_lib.get_param_par(dempar, 'post_lon')) #positive
     lat2 = lat1+postlat*(length-1) # south
     lon2 = lon1+postlon*(width-1) # east
+    # centerlat = lat1+dlat*(length/2)
+    # ra = float(LiCS_lib.get_param_par(dempar, 'ellipsoid_ra'))
+    # recip_f = float(LiCS_lib.get_param_par(dempar, 'ellipsoid_reciprocal_flattening'))
+    # rb = ra*(1-1/recip_f) ## polar radius
+    # pixsp_a = 2*np.pi*rb/360*abs(dlat)
+    # pixsp_r = 2*np.pi*ra/360*dlon*np.cos(np.deg2rad(centerlat))
+    # # print("PIXSP_A===== " + str(pixsp_a))
+
+    # Lat = np.arange(0, (length + 1) * pixsp_r, pixsp_r)
+    # Lon = np.arange(0, (width + 1) * pixsp_a, pixsp_a)
+    # Lat = Lat[:length]
+    # Lon = Lon[:width]
+    # Lon, Lat = np.meshgrid(Lon,Lat)
+    # ll = [lons.flatten(),lats.flatten()]
 
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
@@ -341,6 +357,7 @@ def main(argv=None,auto=None,index_clip=False):
 
 
 #%%
+
 def clip_wrapper(ifgix):
     if np.mod(ifgix, 100) == 0:
         print("  {0:3}/{1:3}th unw...".format(ifgix, len(ifgdates2)), flush=True)
@@ -360,9 +377,14 @@ def clip_wrapper(ifgix):
         return
     coh = io_lib.read_img(ccfile, length, width, dtype=ccformat)
 
-    ### Clip
+  
+    ### Clip and remove ramp 
     unw = unw[y1:y2, x1:x2]
     coh = coh[y1:y2, x1:x2]
+
+    # # REMOVE RAMP DOES THIS HERE SO THAT IT IS NOT NESSESARY IN THE GBIS INVERSION AND SEMIVARIAGRAM CALC DONE AFTER CLIP TO SAVE COMPUTE
+    # Afit, m = tools_lib.fit2d(unw,w=None,deg="2")
+    # unw = np.subtract(unw, Afit)
 
     ### Output
     out_dir1 = os.path.join(out_dir, ifgd)

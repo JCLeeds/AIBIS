@@ -700,12 +700,12 @@ def calc_cov(Lon, Lat, ifgm, sill_cov,range_cov,nugget_cov):
 def invert_plane(ifgm, lat, lon):
     indexs_to_remove_for_decimation = np.random.randint(low=0,high=len(ifgm),size=int(len(ifgm)*0.1)) # change to smaller value decimation to harsh this needs to be sped up 
     # ifgm_orig = ifgm.copy()
-    ifgm = ifgm[~indexs_to_remove_for_decimation]
-    lat = lat[~indexs_to_remove_for_decimation]
-    lon = lon[~indexs_to_remove_for_decimation]   
-    array_of_one = np.zeros(np.shape(lat)) + 1
-    G = list(zip(lat**2,lon**2,lat*lon,lat,lon,array_of_one))
-    d = ifgm  
+    ifgm_dec = ifgm[~indexs_to_remove_for_decimation]
+    lat_dec = lat[~indexs_to_remove_for_decimation]
+    lon_dec = lon[~indexs_to_remove_for_decimation]   
+    array_of_one = np.zeros(np.shape(lat_dec)) + 1
+    G = list(zip(lat_dec**2,lon_dec**2,lat_dec*lon_dec,lat_dec,lon_dec,array_of_one))
+    d = ifgm_dec  
     m = np.linalg.inv((np.transpose(G) @ G)) @ np.transpose(G) @ (d) 
     ifgm_ramp_removed = ifgm - (m[0]*(lat**2) + m[1]*(lon**2) + m[2]*lat*lon + m[3]*lat + m[4]*lon +m[5]) 
     print('Ramp params: y^2a=' + str(m[0]) +'  x^2 b=' + str(m[1]) + ' xy c=' + str(m[2]) +' y d= ' + str(m[3]) + ' x e=' + str(m[4]))

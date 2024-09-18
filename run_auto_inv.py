@@ -50,8 +50,9 @@ import GBIS_run as GR
 import shutil 
 import gc
 import generate_final_report as gfr
+import test_set_selection as tss
 
-@timeout_decorator.timeout(10800) # Times out after 6 hours 
+# @timeout_decorator.timeout(10800) # Times out after 6 hours 
 def main(USGS_ID):
     locations_usgs = []
     locations_reloc_NP1 = []
@@ -65,32 +66,56 @@ def main(USGS_ID):
     # while preproc_one_attempt < 5:
     #     try:
     preproc_object = DaN.deformation_and_noise(USGS_ID,
-                                                target_down_samp=1500,
-                                                inv_soft='GBIS',
-                                                look_for_gacos=True,
-                                                # NP=2,
-                                                all_coseis=True,
-                                                single_ifgm=False,
-                                                coherence_mask=0.1,
-                                                min_unw_coverage=0.1, 
-                                                pygmt=True,
-                                                # date_primary=20200531,
-                                                # date_secondary=20200718,
-                                                # frame=Frame,
-                                                scale_factor_mag=0.075,
-                                                scale_factor_depth=0.075,
-                                                scale_factor_clip_mag=0.25,
-                                                scale_factor_clip_depth=0.0055,
-                                                loop_processing_flow=True
-                                                )
+                                                    target_down_samp=1500,
+                                                    inv_soft='GBIS',
+                                                    look_for_gacos=True,
+                                                    # NP=2,
+                                                    all_coseis=True,
+                                                    single_ifgm=False,
+                                                    coherence_mask=0.075,
+                                                    min_unw_coverage=0.075, 
+                                                    pygmt=True,
+                                                    # date_primary=20200531,
+                                                    # date_secondary=20200718,
+                                                    # frame=Frame,
+                                                    scale_factor_mag=0.075,
+                                                    scale_factor_depth=0.075,
+                                                    scale_factor_clip_mag=0.25,
+                                                    scale_factor_clip_depth=0.0055,
+                                                    loop_processing_flow=True
+                                                    )
         #     preproc_one_attempt = 10
         # except:
         #     preproc_one_attempt += 1
 
     preproc_object_copy = preproc_object
 
-    GBIS_object = GR.auto_GBIS(preproc_object,'./GBIS',NP=1,number_trials=1e5,
-                                pygmt=False,generateReport=True,location_search=False,limit_trials=False)
+    try:
+        GBIS_object = GR.auto_GBIS(preproc_object,'./GBIS',NP=1,number_trials=1e5,
+                                    pygmt=False,generateReport=True,location_search=False,limit_trials=False)
+    except:
+        preproc_object = DaN.deformation_and_noise(USGS_ID,
+                                                    target_down_samp=1500,
+                                                    inv_soft='GBIS',
+                                                    look_for_gacos=True,
+                                                    # NP=2,
+                                                    all_coseis=True,
+                                                    single_ifgm=False,
+                                                    coherence_mask=0.025,
+                                                    min_unw_coverage=0.025, 
+                                                    pygmt=True,
+                                                    # date_primary=20200531,
+                                                    # date_secondary=20200718,
+                                                    # frame=Frame,
+                                                    scale_factor_mag=0.075,
+                                                    scale_factor_depth=0.075,
+                                                    scale_factor_clip_mag=0.25,
+                                                    scale_factor_clip_depth=0.0055,
+                                                    loop_processing_flow=True
+                                                    )
+        GBIS_object = GR.auto_GBIS(preproc_object,'./GBIS',NP=1,number_trials=1e5,
+                                    pygmt=False,generateReport=True,location_search=False,limit_trials=False)
+
 
     shutil.move(GBIS_object.outputdir,GBIS_object.outputdir + '_location_run')
     locations_usgs.append([float(preproc_object.event_object.time_pos_depth['Position'][0]),float(preproc_object.event_object.time_pos_depth['Position'][1])])
@@ -110,7 +135,11 @@ def main(USGS_ID):
     #     shutil.rmtree(preproc_object.event_object.LiCS_locations + '_USGS_location_used')
     # else:
     #     pass
-    shutil.copytree(preproc_object.event_object.LiCS_locations,preproc_object.event_object.LiCS_locations + '_USGS_location_used')
+    try:
+        shutil.copytree(preproc_object.event_object.LiCS_locations,preproc_object.event_object.LiCS_locations + '_USGS_location_used')
+    except Exception as e:
+        print(e)
+        pass 
     preproc_object.flush_for_second_run()
     # preproc_object.geoc_path, preproc_object.gacos_path = preproc_object.data_block.pull_frame_coseis()
     # preproc_object.check_data_pull()
@@ -203,51 +232,63 @@ if __name__ == '__main__':
     
     # full_test = ['us70006sj8']
 
-    full_test = [
-                'us6000iaqi',
-                'us7000ljvg',
-                'us7000gx8m',
-                'us6000529r',
-                'us60007d2r',
-                'us70008db1',
-                'us6000e2k3',
-                'us60007d2r',
-                'us7000htbb',
-                'us6000b26j',
-                'us6000bdq8',
-                'us6000ddge',
-                'us6000dxge',
-                'us6000jk0t',
-                'us6000kynh',
-                'us7000abmk',
-                'us7000cet5',
-                'us7000df40',
-                'us7000fu12',
-                'us7000gebb',
-                'us60007anp',
-                'us70006sj8', 
-                'us7000g9zq',  
-                'us70008cld',
-                'us600068w0',
-                'us7000m3ur',
-                'us6000a8nh',
-                'us7000mpe2',
-                'us7000lt1i',
-                'us7000mbuv',
-                'us6000dyuk',
-                'us6000mjpj',
-                'us6000ldpm',
-                'us6000lfn5',
-                'us6000len8',  
-                'us6000abnv',           
-    ]
-    failed_tests = [] 
-    full_test = full_test + list(df_china.ComCatID)+ list(df_Iran.ComCatID) + list(df_turkey.ComCatID) +list(df_pakist.ComCatID) + list(df_land.id)
+    # full_test = [
+    #             # 'us7000gebb',
+    #             'us6000jk0t',
+    #             # 'us6000kynh',
+    #             # 'us7000htbb',
+    #             'us7000abmk',
+    #             # 'us7000cet5',
+    #             'us7000df40',
+    #             # 'us7000fu12',
+    #             'us60007anp',
+    #             'us70006sj8', 
+    #             'us7000g9zq',  
+    #             'us70008cld',
+    #             'us600068w0',
+    #             'us7000m3ur',
+    #             'us6000a8nh',
+    #             'us7000mpe2',
+    #             'us7000lt1i',
+    #             'us7000mbuv',
+    #             'us6000dyuk',
+    #             'us6000mjpj',
+    #             'us6000ldpm',
+    #             'us6000lfn5',
+    #             'us6000len8',  
+    #             'us6000abnv',  
+    #             'us6000iaqi',
+    #             'us7000ljvg',
+    #             'us7000gx8m',  
+    #             'us6000529r',
+    #             'us60007d2r',
+    #             'us70008db1',
+    #             'us6000e2k3',
+    #             'us60007d2r', 
+    #             'us6000b26j',
+    #             'us6000bdq8',
+    #             'us6000ddge',
+    #             'us6000dxge',     
+    # ]
+
+    # full_test = [ 
+               
+    #               'us60007anp',
+    #               'us6000iaqi',
+    #              'us60007d2r', 
+    #              'us6000529r',
+    #               'us6000ldpm',
+    #               'us7000g9zq', 
+    #              'us6000lfn5',
+    #               'us6000len8',
+    #               ] 
+    # failed_tests = [] 
+    # full_test = full_test + list(df_china.ComCatID)+ list(df_Iran.ComCatID) + list(df_turkey.ComCatID) +list(df_pakist.ComCatID) + list(df_land.id)
     # full_test = []
     # full_test = ['us70008cld']
-    # full_test = ['us6000jk0t']
+    
     # full_test =   ['us7000gebb']
-    # full_test = ['us6000jk0t']
+ 
     # full_test = ['us7000mpe2','us7000lt1i', 'us6000b26j',]
     # full_test = ['us6000jk0t']
     # full_test = ['us7000gebb']
@@ -257,17 +298,62 @@ if __name__ == '__main__':
     # full_test = ['us6000iaqi']
     # full_test = ['us6000dxge']
     # full_test = ['us6000kynh']
+    filtered_df =  tss.LiCS_test_set_selection('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/LiCS_EQ_Responder.csv','2021-01-01','2024-08-30',5.5,6.5)
+    full_test = list(filtered_df.ID) #+ full_test
 
+    # full_test = ['us6000jk0t']
+    full_test = ['us6000jk0t']
+    print(full_test)
+    # full_test = ['us6000jk0t']
+    done_list  = [
+    "us6000ddge",
+    "us6000ek23",
+    "us6000frf2",
+    'us6000g7wd',
+    'us6000h4z7',
+    'us6000hfqj',
+    'us6000hz8x',
+    'us60000iaqi',
+    'us6000j5sn',
+    'us7000fu12',
+    'us7000gx8m',
+    'us7000hj3u',
+    'us7000hszl',
+    'us7000htbb',
+    'us7000j56z',
+    'us7000k5zj',
+    'us7000kp2i',
+    'us7000kp2j',
+    'us7000ljvg',
+    'us7000lt29',
+    'us6000jbsk',
+    'us7000edh9',
+    'us7000fd9v',
+    "us7000df40",
+    "us7000dimf",
+    "us7000fd9v",
+    "us7000gebb",
+    "us60007anp",
+    "us60007d2r",
+    "us7000edh9",
+    "us6000g7wd"
+]   
+  
+   
     for ii in range(len(full_test)):
-        try:
-            main(full_test[ii])
-            gc.collect()
-        except Exception as e: 
-            print(e)
+        if full_test[ii] in done_list:
+            pass 
+        else:
             try:
                 main(full_test[ii])
-            except:
+                gc.collect()
+            except Exception as e: 
+                print(e)
                 pass
+            # try:
+            #     main(full_test[ii])
+            # except:
+            #     pass
             
-            print(full_test[ii])
-            failed_tests.append(full_test[ii])
+            # print(full_test[ii])
+            # failed_tests.append(full_test[ii])

@@ -134,7 +134,7 @@ class deformation_and_noise:
             while attempt < 4: # incase data is pulled incorrectly or copied wrong
                 try: 
                     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PROCESS ATTEMPT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" + str(attempt))
-                    self.run_processing_flow(look_for_gacos)
+                    edge = self.run_processing_flow(look_for_gacos)
                     attempt = 5
                 except Exception as e:
                     self.flush_all_processing()
@@ -148,7 +148,7 @@ class deformation_and_noise:
                     if attempt > 4:
                         print('Failed 5 times on processing flow check errors')
         else:
-            self.run_processing_flow(look_for_gacos)
+            edge = self.run_processing_flow(look_for_gacos)
         print('FINAL PROCESSING HAS FINISHED')
                 
         self.geoc_final_path = self.geoc_ds_path
@@ -227,51 +227,54 @@ class deformation_and_noise:
             self.forward_model(self.geoc_QA_path,2)
         print(len(self.geoc_QA_path))
         if len(self.geoc_QA_path) == 0:
-            raise Exception("EQ is at the edge of ALL frames as defined by 75\% of the mask being NaN values, terminating process") 
-        print("################### QC COHERENCE, COVERANGE AND EDGE CHECKS FINISHED  ####################")
-        print("################### LETS SEMIVARY THAT GRAM  ####################")
-        if isinstance(self.geoc_QA_path,list):
-            noise_dict = self.semi_variogram(self.geoc_QA_path)
-            print(noise_dict)
-            print("################### FINISHED SEMIVARYING THAT GRAM  ####################")
-            for ii in range(len(self.geoc_masked_signal)):
-                self.stack(self.geoc_masked_signal[ii]) 
-            print("################### START CIRC DOWN SAMP  ####################")
-            starttime = time.time()
-            self.geoc_ds_path = self.nested_uniform_down_sample(self.geoc_QA_path,
-                                                                    self.target_down_samp,
-                                                                    scale_factor_mag=self.scale_factor_mag,
-                                                                    scale_factor_depth=self.scale_factor_depth,
-                                                                    stacked=self.dostack,
-                                                                    cov=noise_dict)
-            endtime = time.time()
-            print("Time elasped on downsampling = " + str(endtime-starttime))                                                   
-            print("################### FINISH CIRC DOWN SAMP  ####################")
-            print(self.geoc_ds_path)                                                      
+            print('EQ is at the edge of ALL frames as defined by 75\% of the mask being NaN values, terminating process')
+            return  
+            # raise Exception("EQ is at the edge of ALL frames as defined by 75\% of the mask being NaN values, terminating process") 
         else:
-            print("################### QC STEPS WITH EDGE DETECTION  ####################")
-            self.geoc_QA_path = self.remove_poor_ifgms(self.geoc_masked_signal,self.coherence_mask_thresh,self.min_unw_coverage)
-            self.geoc_QA_path =  self.check_geoc_has_data(self.geoc_QA_path,gacos=False)
-            dirs_with_ifgms, meta_file_paths = self.data_block.get_path_names(self.geoc_QA_path)
-            if len(self.geoc_QA_path) == 0:
-                raise Exception("EQ is at the edge of ALL frames as defined by 75\% of the mask being NaN values, terminating process") 
-            print("################### QC STEPS WITH EDGE DETECTION FINISHED  ####################")
-            print("################### LETS SEMIVARI THAT GRAM  ####################")
-            noise_dict = self.semi_variogram(self.geoc_QA_PATH)
-            print("################### FINISHED SEMIVARING THAT GRAM  ####################")
-            self.stack(self.geoc_masked_signal)
-            starttime = time.time()
-            print("################### START CIRC DOWN SAMP  ####################")
-            self.geoc_ds_path = self.nested_uniform_down_sample(self.geoc_QA_path,
-                                                            self.target_down_samp,
-                                                            scale_factor_mag=self.scale_factor_mag,
-                                                            scale_factor_depth=self.scale_factor_depth,
-                                                            stacked=self.dostack,
-                                                            cov=noise_dict)
-            endtime = time.time()
-            print("Time elasped on downsampling = " + str(endtime-starttime))
-            print("################### FINISH CIRC DOWN SAMP  ####################")
-        return 
+            print("################### QC COHERENCE, COVERANGE AND EDGE CHECKS FINISHED  ####################")
+            print("################### LETS SEMIVARY THAT GRAM  ####################")
+            if isinstance(self.geoc_QA_path,list):
+                noise_dict = self.semi_variogram(self.geoc_QA_path)
+                print(noise_dict)
+                print("################### FINISHED SEMIVARYING THAT GRAM  ####################")
+                for ii in range(len(self.geoc_masked_signal)):
+                    self.stack(self.geoc_masked_signal[ii]) 
+                print("################### START CIRC DOWN SAMP  ####################")
+                starttime = time.time()
+                self.geoc_ds_path = self.nested_uniform_down_sample(self.geoc_QA_path,
+                                                                        self.target_down_samp,
+                                                                        scale_factor_mag=self.scale_factor_mag,
+                                                                        scale_factor_depth=self.scale_factor_depth,
+                                                                        stacked=self.dostack,
+                                                                        cov=noise_dict)
+                endtime = time.time()
+                print("Time elasped on downsampling = " + str(endtime-starttime))                                                   
+                print("################### FINISH CIRC DOWN SAMP  ####################")
+                print(self.geoc_ds_path)                                                      
+            else:
+                print("################### QC STEPS WITH EDGE DETECTION  ####################")
+                self.geoc_QA_path = self.remove_poor_ifgms(self.geoc_masked_signal,self.coherence_mask_thresh,self.min_unw_coverage)
+                self.geoc_QA_path =  self.check_geoc_has_data(self.geoc_QA_path,gacos=False)
+                dirs_with_ifgms, meta_file_paths = self.data_block.get_path_names(self.geoc_QA_path)
+                if len(self.geoc_QA_path) == 0:
+                    raise Exception("EQ is at the edge of ALL frames as defined by 75\% of the mask being NaN values, terminating process") 
+                print("################### QC STEPS WITH EDGE DETECTION FINISHED  ####################")
+                print("################### LETS SEMIVARI THAT GRAM  ####################")
+                noise_dict = self.semi_variogram(self.geoc_QA_PATH)
+                print("################### FINISHED SEMIVARING THAT GRAM  ####################")
+                self.stack(self.geoc_masked_signal)
+                starttime = time.time()
+                print("################### START CIRC DOWN SAMP  ####################")
+                self.geoc_ds_path = self.nested_uniform_down_sample(self.geoc_QA_path,
+                                                                self.target_down_samp,
+                                                                scale_factor_mag=self.scale_factor_mag,
+                                                                scale_factor_depth=self.scale_factor_depth,
+                                                                stacked=self.dostack,
+                                                                cov=noise_dict)
+                endtime = time.time()
+                print("Time elasped on downsampling = " + str(endtime-starttime))
+                print("################### FINISH CIRC DOWN SAMP  ####################")
+            return
 
     def create_geoc_ml(self):
         """

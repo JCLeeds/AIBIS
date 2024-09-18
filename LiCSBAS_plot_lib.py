@@ -92,6 +92,7 @@ def make_scatter_png(lon,lat,data,pngfile,cmap,title,vmin=None, vmax=None, cbar=
     if cmap=='insar':
         cdict = tools_lib.cmap_insar()
         # plt.register_cmap(cmap=mpl.colors.LinearSegmentedColormap('insar', cdict))
+        cmap = mpl.colors.LinearSegmentedColormap('insar', cdict)
         interp = 'nearest'
     else:
         interp = 'nearest' #'antialiased'
@@ -106,9 +107,9 @@ def make_scatter_png(lon,lat,data,pngfile,cmap,title,vmin=None, vmax=None, cbar=
     fig, ax = plt.subplots(1, 1, figsize=(figsizex, figsizey))
     plt.tight_layout()
     if downsamp:
-        im = ax.scatter(lon,lat, c=data, cmap=mpl.colors.LinearSegmentedColormap('insar', cdict), s=10)
+        im = ax.scatter(lon,lat, c=data, cmap=cmap, s=10)
     else:
-        im = ax.scatter(lon,lat, c=data, cmap=mpl.colors.LinearSegmentedColormap('insar', cdict), s=1)
+        im = ax.scatter(lon,lat, c=data, cmap=cmap, s=1)
     # ax.set_xticklabels()
     # ax.set_yticklabels([])
     ax.set_xlabel('Lon (m)')

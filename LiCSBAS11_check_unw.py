@@ -239,6 +239,7 @@ def main(argv=None,auto=None):
         n_unw += ~np.isnan(unw) # Summing number of unnan unw
 
     ## Identify valid area and calc rate_cov
+    print(n_im)
     bool_valid = (n_unw>=1) # JC edit changed from percentage of each ifgm that has more non nan pixels in that spot than nimages.
     n_unw_valid = bool_valid.sum()
     # print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~checker~~~~~~~~~~~~~~~~~~')
@@ -507,7 +508,7 @@ def check_edge_of_frame(ifgix):
         print(percentage_nans)
     # print(nan_in_circle)
     # print(none_nan_in_circle)
-    if percentage_nans >=0.45:
+    if percentage_nans >=0.75:
         bad_dates  = (ifgd)
         print('removing this date')
         print(ifgd)

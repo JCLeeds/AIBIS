@@ -213,12 +213,22 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
     azimuth_angle = np.nanmean(Head)
 
     unw = -unw*(0.0555/(4*np.pi)) - const_offset
+    # unw = unw[~np.isnan(unw)]
+    # lats_flat = lats.flatten()
+    # lats_flat = lats_flat[~np.isnan(unw)]
+    # lons_flat = lons.flatten()
+    # lons_flat = lons_flat[~np.isnan(unw)]
+    
+    # unw,lats,lons =  LiCS_tools.invert_plane(unw.flatten(), lats.flatten(), lons.flatten()) # invert for plane and remove constant offset and ramp from data, this is done for the modelling at step downsampling
     e2los = np.cos(np.deg2rad(azimuth_angle)) * np.sin(np.deg2rad(incidence_angle))
     n2los = -np.sin(np.deg2rad(azimuth_angle)) * np.sin(np.deg2rad(incidence_angle))
     u2los = -np.cos(np.deg2rad(incidence_angle))
     los_grid = (disp[0,:] * e2los) + (disp[1,:] * n2los) + (disp[2,:] * u2los) 
     los_grid = los_grid 
     resid = unw.flatten() - los_grid
+    rms = np.round(np.sqrt(np.mean(np.square(resid[~np.isnan(resid)]))),decimals=4)
+    rms_unw = np.round(np.sqrt(np.mean(np.square(unw[~np.isnan(unw)]))),decimals=4)
+
     region = [np.min(lons),np.max(lons),np.min(lats),np.max(lats)] # GMT region  [xmin,xmax,ymin,ymax].
     
     file_path_data = os.path.join(out_dir1,'data_meters.grd')
@@ -257,11 +267,21 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
     
     
     cmap_output_data = os.path.join(out_dir1,'data_meters.cpt')
-    pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True)
-    cmap_output_model = os.path.join(out_dir1,'model_meters.cpt')
-    pygmt.makecpt(cmap='polar',series=model_series, continuous=True,output=cmap_output_model,background=True)
-    cmap_output_resid = os.path.join(out_dir1,'resid_meters.cpt')
-    pygmt.makecpt(cmap='polar',series=resid_series, continuous=True,output=cmap_output_resid,background=True)
+    # pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True)
+    # cmap_output_model = os.path.join(out_dir1,'model_meters.cpt')
+    # pygmt.makecpt(cmap='polar',series=model_series, continuous=True,output=cmap_output_model,background=True)
+    # cmap_output_resid = os.path.join(out_dir1,'resid_meters.cpt')
+    # pygmt.makecpt(cmap='polar',series=resid_series, continuous=True,output=cmap_output_resid,background=True)
+
+    if np.abs(min_data) > max_data:
+        range_limit = np.abs(min_data)
+    else:
+        range_limit = max_data    
+
+    if range_limit > 2:
+        range_limit = 1
+        
+    pygmt.makecpt(series=[-range_limit, range_limit], cmap="polar",output=cmap_output_data)
 
 
     lons_vertex = vertex[0][:]
@@ -282,11 +302,11 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
     ):
         
         fig.grdimage(grid=file_path_data,cmap=cmap_output_data,region=region,projection='M?c',panel=[0,0])
-        fig.basemap(frame=['a','+tData'],panel=[0,0],region=region,projection='M?c')
+        fig.basemap(frame=['a','+tData (rms: '+str(rms_unw) + ')'],panel=[0,0],region=region,projection='M?c')
         fig.grdimage(grid=file_path_model,cmap=cmap_output_data,region=region,projection='M?c',panel=[0,1])
         fig.basemap(frame=['xa','+tModel Auto_Inv'],panel=[0,1],region=region,projection='M?c')
         fig.grdimage(grid=file_path_res,cmap=cmap_output_data,region=region,projection='M?c',panel=[0,2])
-        fig.basemap(frame=['xa','+tResidual'],panel=[0,2],region=region,projection='M?c')
+        fig.basemap(frame=['xa','+tResidual (rms: '+str(rms) + ')'],panel=[0,2],region=region,projection='M?c')
         
         
         for ii in range(0,3):
@@ -311,7 +331,7 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
             )
          
         for ii in range(0,3):
-                fig.colorbar(frame=["x+lLOS displacment(m)", "y+lm"], position="JMB",projection='M?c',panel=[0,ii]) # ,panel=[1,0]
+                fig.colorbar(frame=["x+lLOS Displacement(m)", "y+lm"], position="JMB",projection='M?c',panel=[0,ii]) # ,panel=[1,0]
         # fig.show(method='external')
         fig.savefig(os.path.join(os.path.join(out_dir1),"output_model_comp.png"))
 
@@ -474,10 +494,23 @@ if __name__ == '__main__':
      -0.47416,
      -0.28685,
             0]
-    geoc_ml_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000jk0t_insar_processing/GEOC_072A_05090_131313_floatml_masked_GACOS_Corrected_clipped'
+    
+    # model = [ 5676.77,
+    #           6019.58,
+    #           3605.16,
+    #           -30.6425,
+    #           187.587,
+    #           -2.67297,
+    #           211.366,
+    #           -0.47416,
+    #         -0.28685,
+    #         0
+    # ]
+    geoc_ml_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us70008cld_insar_processing/GEOC_012A_06041_131313_floatml_masked_GACOS_Corrected_clipped'
     output_geoc = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/test'
     location = [44.9097,38.4199]
-    vertex_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000jk0t_NP1/invert_1_2_3_4_5_F/optmodel_vertex.mat'
+    location = [28.5896,87.3081]
+    vertex_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us70008cld_NP1/invert_2_5_11_F/optmodel_vertex.mat'
     # try:
     output_model(geoc_ml_path,output_geoc,model,location,vertex_path)
     # except:

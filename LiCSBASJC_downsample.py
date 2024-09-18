@@ -45,7 +45,7 @@ def main(geoc_ml_path,output_geoc_ml_path,rad,center,new_points,argv=None,stacke
         if argv == None:
             argv = sys.argv
 
-        global ifgdates2, in_dir, out_dir, length, width, bool_mask, cmap_wrap, cycle, radius, cent, nmpoints, stack_data, return_cov
+        global ifgdates2, in_dir, out_dir, length, width, bool_mask, cmap_wrap, cmap_noise, cmap_unwrap, cycle, radius, cent, nmpoints, stack_data, return_cov
         
         try:
             n_para = len(os.sched_getaffinity(0))
@@ -55,6 +55,7 @@ def main(geoc_ml_path,output_geoc_ml_path,rad,center,new_points,argv=None,stacke
         cmap_noise = 'viridis'
         # cmap_wrap = SCM.romaO
         cmap_wrap = 'insar'
+        cmap_unwrap = 'bwr'
         q = multi.get_context('fork')
 
         # length, width = float_ifgm.shape 
@@ -222,11 +223,12 @@ def mask_downsampler(ifgix):
     if return_cov:
         # print(return_cov)
         sill_nugget_range = return_cov[ifgd] 
-        # print(return_cov[ifgd])
-        unw,Lon,Lat,Heading,Inc,cov, Lon_m, Lat_m = poly_average_opti(in_dir,unw,phi,theta,bool_mask,radius,cent,nmpoints,sill_nugget_range)
+        print(return_cov[ifgd])
+        unw,Lon,Lat,Heading,Inc, cov, Lon_m, Lat_m = poly_average_opti(in_dir,unw,phi,theta,bool_mask,radius,cent,nmpoints,sill_nugget_range)
+        # unw, Lat , Lon = LiCS_tools.invert_plane(unw, Lat, Lon)
     else:
         unw,Lon,Lat,Heading,Inc,Lon_m, Lat_m = poly_average_opti(in_dir,unw,phi,theta,bool_mask,radius,cent,nmpoints)
-
+        # unw, Lat , Lon = LiCS_tools.invert_plane(unw, Lat, Lon)
 
     # Convert from rad to meters 
     # unw = -unw*(0.0555/(4*np.pi)) # ------> rad to m conversion is -lamba/4*pi posative is -LOS
@@ -239,10 +241,10 @@ def mask_downsampler(ifgix):
     # print("output_directory1########### " + out_dir1)
     if not os.path.exists(out_dir1): os.mkdir(out_dir1)
 
-    if stack_data:
-        unw.tofile(os.path.join(out_dir,'stacked_ds.unw'))
-    else:
-        unw.tofile(os.path.join(out_dir1, ifgd+'.unw'))
+    # if stack_data:
+    #     unw.tofile(os.path.join(out_dir,'stacked_ds.unw'))
+    # else:
+    unw.tofile(os.path.join(out_dir1, ifgd+'.unw'))
 
     if not os.path.exists(os.path.join(out_dir1, ifgd+'.cc')):
         ccfile = os.path.join(in_dir, ifgd, ifgd+'.cc')
@@ -258,11 +260,11 @@ def mask_downsampler(ifgix):
     # title = '{} ({}pi/cycle)'.format(ifgd, cycle*2)
     # plot_lib.make_scatter_png(Lon,Lat,np.angle(np.exp(1j*unw/cycle)*cycle), pngfile_unw, cmap_wrap, title, -np.pi, np.pi, cbar=True)
     print("done 1 ")
-    plot_lib.make_scatter_png(Lon,Lat,Inc, pngfile_Inc, cmap_wrap, "Incidence", cbar=True)
+    plot_lib.make_scatter_png(Lon,Lat,Inc, pngfile_Inc, cmap_noise, "Incidence", cbar=True)
     print("done 2 ")
-    plot_lib.make_scatter_png(Lon,Lat,Heading, pngfile_Head, cmap_wrap, "Heading",cbar=True)
+    plot_lib.make_scatter_png(Lon,Lat,Heading, pngfile_Head, cmap_noise, "Heading",cbar=True)
     print("done 3")
-    plot_lib.make_scatter_png(Lon,Lat,unw, png_regular_unw, cmap_wrap, "Displacement (radians)",cbar=True,downsamp=True)
+    plot_lib.make_scatter_png(Lon,Lat,unw, png_regular_unw, cmap_unwrap, "Displacement (radians)",cbar=True,downsamp=True)
     Frame_identifier = in_dir.split('/')[-1]
 
     

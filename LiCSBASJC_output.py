@@ -610,7 +610,7 @@ def six_panel_plot(ifgix):
             )
         print('first grdimages after loop')
         for ii in range(0,3):
-                fig.colorbar(frame=["x+lLOS displacment(m)", "y+lm"], position="JMB",projection='M10c',panel=[0,ii]) 
+                fig.colorbar(frame=["x+lLOS Displacement(m)", "y+lm"], position="JMB",projection='M10c',panel=[0,ii]) 
                 
         # print('second grdimages')  
         # fig.grdimage(grid=file_path_data,cmap=cmap_output_data,region=region,projection='M?c',panel=[1,0])

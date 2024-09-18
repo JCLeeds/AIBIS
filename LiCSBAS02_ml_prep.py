@@ -300,6 +300,9 @@ def main(argv=None,auto=None):
         rc = p.map(convert_wrapper, range(n_ifg2))
         p.close()
 
+ 
+    
+
         # image_list = []
         # for ifgix, ifgd in enumerate(ifgdates2): 
         #     out_dir1 = os.path.join(out_dir, ifgd)
@@ -364,8 +367,8 @@ def main(argv=None,auto=None):
     # test_unw = np.fromfile(os.path.join(outdir,"20230108_20230201/20230108_20230201.unw"))
     # print("test_unw length" + str(np.shape(test_unw)))
 
-    plot_lib.make_im_png(theta, pngfile_theta, 'insar', "theta", cbar=True,flatten=True)
-    plot_lib.make_im_png(phi, pngfile_phi, 'insar', "phi", cbar=True,flatten=True)
+    plot_lib.make_im_png(theta, pngfile_theta, 'viridis', "theta", cbar=True,flatten=True)
+    plot_lib.make_im_png(phi, pngfile_phi, 'viridis', "phi", cbar=True,flatten=True)
 
     #%% EQA.dem_par, slc.mli.par
     if not os.path.exists(mlipar):
@@ -426,6 +429,9 @@ def main(argv=None,auto=None):
     else:
         print('  No valid baselines file exists. Make dummy.', flush=True)
         io_lib.make_dummy_bperp(bperp_file_out, imdates)
+
+    for i,ifgd in enumerate(ifgdates):
+        remove_ramps(i,length,width)
 
 
     #%% Finish
@@ -493,6 +499,14 @@ def convert_wrapper(i):
         cc[cc==0] = np.nan
         cc = tools_lib.multilook(cc, nlook, nlook, n_valid_thre)
 
+   
+
+    ### Invert and Remove Ramp
+    # REMOVE RAMP DOES THIS HERE SO THAT IT IS NOT NESSESARY IN THE GBIS INVERSION AND SEMIVARIAGRAM CALC DONE AFTER CLIP TO SAVE COMPUTE
+   
+    # Afit, m = tools_lib.fit2d(unw,w=None,deg="1")
+    # unw = np.subtract(unw, Afit)
+
     ### Output float
     # unw = -unw/4/np.pi*0.0555 # Test line remove I think this converts to meters?
     unw.tofile(unwfile)
@@ -500,12 +514,31 @@ def convert_wrapper(i):
     cc.tofile(ccfile)
 
     ### Make png
-    unwpngfile = os.path.join(ifgdir1, ifgd+'.unw.png')
-    plot_lib.make_im_png(np.angle(np.exp(1j*unw/cycle)*cycle), unwpngfile, cmap_wrap, ifgd+'.unw', vmin=-np.pi, vmax=np.pi, cbar=True)
+    unwpngfile = os.path.join(ifgdir1, ifgd+'.unw_without_ramp_removal.png')
+    plot_lib.make_im_png(np.angle(np.exp(1j*unw/cycle)*cycle), unwpngfile, cmap_wrap, ifgd+'.unw_without_ramp_removal', vmin=-np.pi, vmax=np.pi, cbar=True)
     ccpngfile = os.path.join(ifgdir1,ifgd+'.cc.png')
     plot_lib.make_im_png(cc,ccpngfile, 'gray', (ifgd+".cc") ,vmin=np.min(cc),vmax=np.max(cc),cbar=True)
     
     return 0
+
+
+def remove_ramps(i,length,width):
+   
+    ifgd = ifgdates2[i]
+    print('removing ramp from ' + str(ifgd))
+    ifgdir1 = os.path.join(outdir, ifgd)
+    if not os.path.exists(ifgdir1): os.mkdir(ifgdir1)
+
+    unwfile = os.path.join(ifgdir1, ifgd+'.unw')  
+    unw = io_lib.read_img(unwfile, length, width)
+    unw[unw==0] = np.nan
+    Afit, m = tools_lib.fit2d(unw,w=None,deg="1")
+    unw = np.subtract(unw, Afit)
+
+
+    unwpngfile = os.path.join(ifgdir1, ifgd+'.unw.png')
+    plot_lib.make_im_png(np.angle(np.exp(1j*unw/cycle)*cycle), unwpngfile, cmap_wrap, ifgd+'.unw', vmin=-np.pi, vmax=np.pi, cbar=True)
+    unw.tofile(unwfile)
 
 
 #%% main

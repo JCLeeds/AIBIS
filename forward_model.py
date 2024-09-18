@@ -99,7 +99,8 @@ def forward_modelling_para_gmt(ifgix):
     date_dir = geoc_ml_path + "/" + ifgd
     file_name = ifgd + '.unw'
     unw_file = os.path.join(date_dir,file_name) 
-    unw = np.fromfile(unw_file, dtype='float32').reshape((length_ifgm, width_ifgm)) 
+    unw = np.fromfile(unw_file, dtype='float32').reshape((length_ifgm, width_ifgm))
+    unw = -unw*(0.0555/(4*np.pi))
     # width_ifgm = int(LiCS_lib.get_param_par(EQA_dem_par, 'width'))
     # length_ifgm = int(LiCS_lib.get_param_par(EQA_dem_par, 'nlines'))
     dlat = float(LiCS_lib.get_param_par(EQA_dem_par, 'post_lat')) #negative
@@ -120,6 +121,8 @@ def forward_modelling_para_gmt(ifgix):
     lons_orig = np.array(lons,dtype=float)[:width_ifgm]
 
     lons, lats = np.meshgrid(lons_orig,lats_orig)
+    lons = lons.flatten() 
+    lats = lats.flatten()
     ll = [lons.flatten(),lats.flatten()]
     ll = np.array(ll,dtype=float)
     xy = llh.llh2local(ll,np.array([locations[1],locations[0]],dtype=float))
@@ -131,6 +134,17 @@ def forward_modelling_para_gmt(ifgix):
     yy_original = yy_original[:length_ifgm]
     xx_vec = xy[0,:].flatten() 
     yy_vec = xy[1,:].flatten()
+    unw = unw.flatten()
+    if len(xx_vec) > 100000:  
+        indexs_to_remove_for_decimation = np.random.randint(low=0,high=len(xx_vec),size=int(len(xx_vec)*0.5))
+        xx_vec = xx_vec[indexs_to_remove_for_decimation]
+        yy_vec = yy_vec[indexs_to_remove_for_decimation]
+        unw_ds = unw[indexs_to_remove_for_decimation]
+        lons_ds = lons[indexs_to_remove_for_decimation]
+        lats_ds = lats[indexs_to_remove_for_decimation]
+    
+        
+
     centroid_depth = depth
     # centroid_depth=5000
     print(depth)
@@ -158,26 +172,38 @@ def forward_modelling_para_gmt(ifgix):
     incidence_angle = np.nanmean(Inc)
     azimuth_angle = np.nanmean(Head)
 
-    unw = -unw*(0.0555/(4*np.pi))
+   
     e2los = np.cos(np.deg2rad(azimuth_angle)) * np.sin(np.deg2rad(incidence_angle))
     n2los = -np.sin(np.deg2rad(azimuth_angle)) * np.sin(np.deg2rad(incidence_angle))
     u2los = -np.cos(np.deg2rad(incidence_angle))
     los_grid_usgs = (disp_usgs[0,:] * e2los) + (disp_usgs[1,:] * n2los) + (disp_usgs[2,:] * u2los) 
     los_grid_usgs = -los_grid_usgs
-    resid_usgs = unw.flatten() - los_grid_usgs
+    if len(xx_vec) > 100000:  
+        resid_usgs = unw_ds.flatten() - los_grid_usgs
+    else:
+        resid_usgs = unw.flatten() - los_grid_usgs
+
+    rms = np.round(np.sqrt(np.mean(np.square(resid_usgs[~np.isnan(resid_usgs)]))),decimals=4)
+    rms_unw = np.round(np.sqrt(np.mean(np.square(unw[~np.isnan(unw)]))),decimals=4)
     region = [np.min(lons),np.max(lons),np.min(lats),np.max(lats)] # GMT region  [xmin,xmax,ymin,ymax].
     
     file_path_data = os.path.join(date_dir,'data_meters.grd')
     file_path_res = os.path.join(date_dir,'residual_usgs_model_meters.grd')
     file_path_model = os.path.join(date_dir,'model_usgs_meters.grd')
 
-    pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=unw.flatten(),outgrid=file_path_data,region=region,spacing=(0.001,0.001))
-    pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=resid_usgs,outgrid=file_path_res,region=region,spacing=(0.001,0.001))
-    pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=los_grid_usgs,outgrid=file_path_model,region=region,spacing=(0.001,0.001))
+    if len(xx_vec) > 100000:  
+        pygmt.xyz2grd(x=lons_ds.flatten(),y=lats_ds.flatten(),z=resid_usgs,outgrid=file_path_res,region=region,spacing=(0.005,0.005))
+        pygmt.xyz2grd(x=lons_ds.flatten(),y=lats_ds.flatten(),z=los_grid_usgs,outgrid=file_path_model,region=region,spacing=(0.01,0.01))
+        pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=unw,outgrid=file_path_data,region=region,spacing=(0.001,0.001))
+    else:
+        pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=unw,outgrid=file_path_data,region=region,spacing=(0.001,0.001))
+        pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=resid_usgs,outgrid=file_path_res,region=region,spacing=(0.001,0.001))
+        pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=los_grid_usgs,outgrid=file_path_model,region=region,spacing=(0.001,0.001))
 
-    max_data = np.nanmax(unw.flatten()) 
+    max_data = np.nanmax(unw) 
     print(max_data)
-    min_data = np.nanmin(unw.flatten()) 
+    min_data = np.nanmin(unw) 
+
     if max_data < min_data:
         max_data, min_data = min_data, max_data
     data_series = str(min_data) + '/' + str(max_data) +'/' + str((max_data - min_data)/100)
@@ -197,6 +223,22 @@ def forward_modelling_para_gmt(ifgix):
     pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True)
     cmap_output_model = os.path.join(date_dir,'model_meters.cpt')
     pygmt.makecpt(cmap='polar',series=model_series, continuous=True,output=cmap_output_model,background=True)
+
+    if np.abs(min_data) > max_data:
+        range_limit = np.abs(min_data)
+    else:
+        range_limit = max_data    
+
+    pygmt.makecpt(series=[-range_limit, range_limit], cmap="polar",output=cmap_output_data)
+
+
+    if np.abs(min_model) > max_model:
+        range_limit_model = np.abs(min_model)
+    else:
+        range_limit_model = max_model    
+
+    pygmt.makecpt(series=[-range_limit_model, range_limit_model], cmap="polar",output=cmap_output_model)
+
     with fig.subplot(
         nrows=1,
         ncols=3,
@@ -208,11 +250,11 @@ def forward_modelling_para_gmt(ifgix):
     ):
         
         fig.grdimage(grid=file_path_data,cmap=cmap_output_data,region=region,projection='M?c',panel=[0,0])
-        fig.basemap(frame=['a','+tData'],panel=[0,0],region=region,projection='M?c')
+        fig.basemap(frame=['a','+tData (rms: '+str(rms_unw) + ')'],panel=[0,0],region=region,projection='M?c')
         fig.grdimage(grid=file_path_model,cmap=cmap_output_model,region=region,projection='M?c',panel=[0,1])
         fig.basemap(frame=['xa','+tModel USGS'],panel=[0,1],region=region,projection='M?c')
         fig.grdimage(grid=file_path_res,cmap=cmap_output_data,region=region,projection='M?c',panel=[0,2])
-        fig.basemap(frame=['xa','+tResidual'],panel=[0,2],region=region,projection='M?c')
+        fig.basemap(frame=['xa','+tResidual (rms: '+str(rms) + ')'],panel=[0,2],region=region,projection='M?c')
         
         print(llh_usgs[0,:])
         print(llh_usgs[1,:])
@@ -309,5 +351,5 @@ if __name__ == "__main__":
     width = 10000
     length = 10000
     location = [38.420,44.910]
-    dates = '20230108_20230213'
-    forward_model("/Users/jcondon/phd/code/auto_inv/us6000jk0t_insar_processing/GEOC_072A_05090_131313_floatml_masked_GACOS_Corrected_clipped",strike,dip,rake,slip,depth,length,width,location,dates)
+    dates = '20200110_20200614'
+    forward_model("/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/test/GEOC_043A_05008_161514_floatml_masked_GACOS_Corrected_clipped_signal_masked",strike,dip,rake,slip,depth,length,width,location,dates)
