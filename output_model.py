@@ -90,6 +90,7 @@ def output_model(geoc_ml_path,output_geoc,model,location,vertex_path):
   
     ifgdates2 = ifgdates
     n_ifg2 = len(ifgdates2)
+    print(n_ifg2)
 
     # if n_ifg-n_ifg2 > 0:
     #     print("  {0:3}/{1:3} masked unw and cc already exist. Skip".format(n_ifg-n_ifg2, n_ifg), flush=True)
@@ -104,8 +105,9 @@ def output_model(geoc_ml_path,output_geoc,model,location,vertex_path):
     #     p = q.Pool(n_para)
     #     p.map(forward_modelling_para_gmt, range(n_ifg2))
     #     p.close()
-    
+    print('here')
     for ii in range(n_ifg2):
+        print(ii)
         forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ii,ifgdates2)
 
 
@@ -114,6 +116,7 @@ def output_model(geoc_ml_path,output_geoc,model,location,vertex_path):
  
 
 def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix,ifgdates2):
+    print('here')
     # import pygmt
     # reload(pygmt)
     ifgd = ifgdates2[ifgix]
@@ -193,6 +196,8 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
         const_offset = 0
 
     rake = np.degrees(np.arctan2(DS,SS))
+    print('Rake for forward model')
+    print(rake)
     total_slip = np.sqrt(SS**2 + DS**2)
 
     # model = [X, Y, strike, dip, rake, total_slip, length, depth, width]
@@ -204,7 +209,25 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
     # print(strike)
     # print(dip)
     # print(rake)
-    disp =lib.disloc3d3(xx_vec,yy_vec,xoff=X,yoff=Y,depth=depth,
+    lons_vertex = vertex[:][0]
+    lats_vertex = vertex[:][1]
+    print('this one')
+    print(np.array([lons_vertex,lats_vertex]))
+    vertex_meters = llh.llh2local(np.array([lons_vertex,lats_vertex]), np.array([locations[0],locations[1]])) 
+    # print(vertex[0:2,:])
+    # print(vertex_meters)
+    X_vertex = vertex_meters[0][:]
+    Y_vertex = vertex_meters[1][:]
+   
+    # depth_vertex = vertex_meters[2][:]
+
+    
+    X_cent, Y_cent = np.mean(X_vertex[0:len(X_vertex)-2]),np.mean(Y_vertex[0:len(Y_vertex)-2])
+    print(X)
+    print(X_cent)
+  
+
+    disp =lib.disloc3d3(xx_vec,yy_vec,xoff=X_cent,yoff=Y_cent,depth=depth,
                             length=length,width=width,slip=total_slip,
                             opening=0,strike=strike,dip=dip,rake=rake,nu=0.25)
 
@@ -229,6 +252,10 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
     rms = np.round(np.sqrt(np.mean(np.square(resid[~np.isnan(resid)]))),decimals=4)
     rms_unw = np.round(np.sqrt(np.mean(np.square(unw[~np.isnan(unw)]))),decimals=4)
 
+    wrapped_los = np.mod(unw,0.056/2)
+    wrapped_res = np.mod(resid, 0.056/2)
+    wrapped_model = np.mod(los_grid,0.056/2)
+
     region = [np.min(lons),np.max(lons),np.min(lats),np.max(lats)] # GMT region  [xmin,xmax,ymin,ymax].
     
     file_path_data = os.path.join(out_dir1,'data_meters.grd')
@@ -238,6 +265,10 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
     pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=unw.flatten(),outgrid=file_path_data,region=region,spacing=(0.001,0.001))
     pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=resid,outgrid=file_path_res,region=region,spacing=(0.001,0.001))
     pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=los_grid,outgrid=file_path_model,region=region,spacing=(0.001,0.001))
+
+    pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=wrapped_los.flatten(),outgrid='wrapped_los.unw.grd',region=region,spacing=(0.001,0.001))
+    pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=wrapped_res,outgrid='wrapped_residual.unw.grd',region=region,spacing=(0.001,0.001))
+    pygmt.xyz2grd(x=lons.flatten(),y=lats.flatten(),z=wrapped_model,outgrid='wrapped_model.unw.grd',region=region,spacing=(0.001,0.001))
 
     max_data = np.max(unw[~np.isnan(unw)].flatten()) 
     # print(max_data)
@@ -267,6 +298,7 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
     
     
     cmap_output_data = os.path.join(out_dir1,'data_meters.cpt')
+    cmap_output_wrapped = os.path.join(out_dir1,'wrapped_data.cpt')
     # pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True)
     # cmap_output_model = os.path.join(out_dir1,'model_meters.cpt')
     # pygmt.makecpt(cmap='polar',series=model_series, continuous=True,output=cmap_output_model,background=True)
@@ -280,19 +312,23 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
 
     if range_limit > 2:
         range_limit = 1
-        
-    pygmt.makecpt(series=[-range_limit, range_limit], cmap="polar",output=cmap_output_data)
 
+  
+    vik = '/uolstore/Research/a/a285/homes/ee18jwc/code/colormaps/vik/vik.cpt'
+    roma = '/uolstore/Research/a/a285/homes/ee18jwc/code/colormaps/roma/roma.cpt'
+    pygmt.makecpt(series=[-range_limit, range_limit], cmap=vik,output=cmap_output_data,background=True)
+    pygmt.makecpt(cmap=roma,series=[0,0.056/2], continuous=True,output=cmap_output_wrapped,background=True) 
 
     lons_vertex = vertex[0][:]
     lats_vertex = vertex[1][:]
     depth_vertex = vertex[2][:]
+   
     # print(lons_vertex)
     # print(lats_vertex)
     # print(depth_vertex)
 
     with fig.subplot(
-        nrows=1,
+        nrows=2,
         ncols=3,
         figsize=("45c", "45c","45c"),
         autolabel=False,
@@ -333,8 +369,45 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
         for ii in range(0,3):
                 fig.colorbar(frame=["x+lLOS Displacement(m)", "y+lm"], position="JMB",projection='M?c',panel=[0,ii]) # ,panel=[1,0]
         # fig.show(method='external')
-        fig.savefig(os.path.join(os.path.join(out_dir1),"output_model_comp.png"))
+       
 
+
+
+        fig.grdimage(grid='wrapped_los.unw.grd',cmap='Wrapped_CPT.cpt',region=region,projection='M?c',panel=[1,0])
+        fig.basemap(frame=['a'],panel=[1,0],region=region,projection='M?c')
+        fig.grdimage(grid='wrapped_model.unw.grd',cmap='Wrapped_CPT.cpt',region=region,projection='M?c',panel=[1,1])
+        fig.basemap(frame=['xa'],panel=[1,1],region=region,projection='M?c')
+        fig.grdimage(grid='wrapped_residual.unw.grd',cmap='Wrapped_CPT.cpt',region=region,projection='M?c',panel=[1,2])
+        fig.basemap(frame=['xa'],panel=[1,2],region=region,projection='M?c')
+
+
+                
+        
+        for ii in range(0,3):
+            fig.plot(x=lons_vertex[:-2],
+                        y=lats_vertex[:-2],
+                        pen='1p,black',
+                        fill='gray',
+                        transparency=80,
+                        region=region,
+                        projection='M?c',
+                        panel=[1,ii]
+            )
+
+            fig.plot(x=lons_vertex[len(lons_vertex)-2:len(lons_vertex)],
+                        y=lats_vertex[len(lats_vertex)-2:len(lats_vertex)],
+                        pen='4p,black,-',
+                        fill='gray',
+                        # transparency=,
+                        region=region,
+                        projection='M?c',
+                        panel=[1,ii]
+            )
+         
+        for ii in range(0,3):
+                fig.colorbar(frame=["x+lLOS Displacement(m)", "y+lm"], position="JMB",projection='M?c',panel=[1,ii]) # ,panel=[1,0]
+
+    fig.savefig(os.path.join(os.path.join(out_dir1),"output_model_comp.png"))
 
 # def forward_modelling_2D_plot(resampled_terrain,gradiant_terrain,ifgix):
 #     import pygmt
@@ -484,16 +557,18 @@ def forward_modelling_para_gmt(in_dir,out_dir,locations ,opt_model, vertex,ifgix
 
 if __name__ == '__main__':
     model = [
-       6578.2,
-       6498.4,
-       6177.6,
-      -58.315,
-       411.55,
-      -5267.1,
-        10216,
-     -0.47416,
-     -0.28685,
+        7221.23,
+       11694.6,
+          14930.3,
+       -53.9059,
+          16.0605,
+        2457.95,
+        1977.82,
+     0.661505	,
+      -1.64494	,
             0]
+
+
     
     # model = [ 5676.77,
     #           6019.58,
@@ -506,11 +581,16 @@ if __name__ == '__main__':
     #         -0.28685,
     #         0
     # ]
-    geoc_ml_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us70008cld_insar_processing/GEOC_012A_06041_131313_floatml_masked_GACOS_Corrected_clipped'
+    geoc_ml_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us70006d0m_insar_processing/GEOC_153D_04877_091102_floatml_masked_GACOS_Corrected_clipped'
     output_geoc = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/test'
-    location = [44.9097,38.4199]
-    location = [28.5896,87.3081]
-    vertex_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us70008cld_NP1/invert_2_5_11_F/optmodel_vertex.mat'
+    # location = [44.9097,38.4199]
+    # location = [28.5896,87.3081]
+    # location = [2.6675,-59.5879]
+    location = [7.6222,124.9103]
+    location = [124.9103,7.6222]
+    location = [19.5256,41.5138]
+
+    vertex_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us70006d0m_NP2/invert_12_17_18_19_F/optmodel_vertex.mat'
     # try:
     output_model(geoc_ml_path,output_geoc,model,location,vertex_path)
     # except:

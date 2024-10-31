@@ -134,11 +134,12 @@ def diameter_mask(strike, dip, rake, depth, Mw,xx_vec,yy_vec):
         elif len(widths) > 0:
             checker = True 
     
-        if checker == True and np.max(np.array(widths)) < 111.13*0.05*1e3/3:
-                    widths = [111.13*0.05*1e3/3]
-                # checker = [x if len(widths)>0 else len(widths) == 0]
-                # print(len)
-                # print(checker)
+        if checker == True and np.max(np.array(widths)) < (111.13*0.5*1e3/3):
+            widths =  [111.13*0.5*1e3/3]
+        
+        if checker == True and np.max(np.array(widths)) > (111.13*1*1e3)/3:
+            print('MASK IS HERE')
+            widths = [111.13*1*1e3/4]
 
     plt.scatter(xx_vec,yy_vec,c=disp_E)
     plt.colorbar()
@@ -181,7 +182,7 @@ if __name__ == "__main__":
     longitude = 92.7977
     magnitude = 5.7
     moment = 1.95e+17
-    depth = 5000.0
+    depth = 100
     strike1 = 336.11
     dip1 = 86.04
     rake1 = -167.58
@@ -204,7 +205,7 @@ if __name__ == "__main__":
     magnitude = 5.9
     # magnitude type = Mww
     moment = 1.01e+18
-    depth = 12000.0
+    depth = 100
     # catalog = USGS 
     strike1 = 156.36
     dip1 = 28.19

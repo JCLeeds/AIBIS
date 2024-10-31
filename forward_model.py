@@ -218,18 +218,19 @@ def forward_modelling_para_gmt(ifgix):
     fig = pygmt.Figure()
     pygmt.config(MAP_FRAME_TYPE="plain")
     pygmt.config(FORMAT_GEO_MAP="ddd.xx")
-    pygmt.config(FORMAT_FLOAT_OUT='%.12lg') 
+    pygmt.config(FORMAT_FLOAT_OUT='%.12lg')
+    vik = '/uolstore/Research/a/a285/homes/ee18jwc/code/colormaps/vik/vik.cpt'
     cmap_output_data = os.path.join(date_dir,'data_meters.cpt')
-    pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True)
+    pygmt.makecpt(cmap=vik,series=data_series, continuous=True,output=cmap_output_data,background=True)
     cmap_output_model = os.path.join(date_dir,'model_meters.cpt')
-    pygmt.makecpt(cmap='polar',series=model_series, continuous=True,output=cmap_output_model,background=True)
+    pygmt.makecpt(cmap=vik,series=model_series, continuous=True,output=cmap_output_model,background=True)
 
     if np.abs(min_data) > max_data:
         range_limit = np.abs(min_data)
     else:
         range_limit = max_data    
 
-    pygmt.makecpt(series=[-range_limit, range_limit], cmap="polar",output=cmap_output_data)
+    pygmt.makecpt(series=[-range_limit, range_limit], cmap=vik,output=cmap_output_data,background=True)
 
 
     if np.abs(min_model) > max_model:
@@ -237,7 +238,7 @@ def forward_modelling_para_gmt(ifgix):
     else:
         range_limit_model = max_model    
 
-    pygmt.makecpt(series=[-range_limit_model, range_limit_model], cmap="polar",output=cmap_output_model)
+    pygmt.makecpt(series=[-range_limit_model, range_limit_model], cmap=vik,output=cmap_output_model,background=True)
 
     with fig.subplot(
         nrows=1,

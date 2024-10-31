@@ -357,13 +357,13 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
 
 
         
-    data_model_res = glob.glob(NP1_solution_figures + '/*InSAR_Data_Model*')
+    data_model_res = glob.glob(NP1_solution_figures + '/*res_los_modlos*.png')
     # doc.append(NewPage(1))
     # doc.preamble.append(NoEscape(r'\clearpage'))
     with doc.create(Section('Inversion Results NP1')):
-        path_to_convergence = NP1_solution_figures + '/Convergence.png'
-        path_to_jointprobs = NP1_solution_figures + '/JointProbabilities.png'
-        path_to_PDF = glob.glob(NP1_solution_figures+'/*DFs*')[0]
+        path_to_convergence = NP1_solution_figures + '/convergence_fault0.png'
+        path_to_jointprobs = NP1_solution_figures + '/probability-density-distributions_fault0.png'
+        path_to_PDF = glob.glob(NP1_solution_figures+'/pdf_fault*')[0]
 
         with doc.create(LongTable("l l l l l l l")) as data_table:
             data_table.add_hline()
@@ -569,14 +569,14 @@ def generateReport(GBIS_Area_path,GBIS_res_1,GBIS_res_2,ID):
 
 
     NP2_solution_figures = NP2_solution + '/Figures'
-    data_model_res = glob.glob(NP2_solution_figures + '/*InSAR_Data_Model*')
+    data_model_res = glob.glob(NP2_solution_figures + '/*res_los_modlos*.png')
     # doc.append(NewPage(1))
     # doc.preamble.append(NoEscape(r'\clearpage'))
     doc.append(NoEscape(r'\FloatBarrier'))
     with doc.create(Section('Inversion Results NP2')):
-        path_to_convergence = NP2_solution_figures + '/Convergence.png'
-        path_to_jointprobs = NP2_solution_figures + '/JointProbabilities.png'
-        path_to_PDF = glob.glob(NP2_solution_figures+'/*DFs*')[0]
+        path_to_convergence = NP2_solution_figures + '/convergence_fault0.png'
+        path_to_jointprobs = NP2_solution_figures + '/probability-density-distributions_fault0.png'
+        path_to_PDF = glob.glob(NP2_solution_figures+'/pdf_fault0.png')[0]
         # print(path_to_PDF)
         with doc.create(LongTable("l l l l l l l")) as data_table:
             data_table.add_hline()

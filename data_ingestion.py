@@ -83,11 +83,15 @@ class DataBlock:
         frame_list = self.get_frame_list()
         geoc_path = []
         gacos_path = []
+        print(frame_list)
         for ii in range(len(frame_list)):
             self.group_by_flag('coseismic')
             self.group_by_frame(frame_list[ii])
             if self.eq_df.empty:
-                break 
+                print(frame_list[ii])
+                print('EARTHQUAKE FRAME NO COSEISMIC')
+                self.reset_df() 
+                continue 
             else:
                 pass 
             print(self.eq_df)

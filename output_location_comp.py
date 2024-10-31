@@ -207,6 +207,7 @@ def forward_modelling_2D_plot(resampled_terrain,gradiant_terrain,ifgix):
  
     
     pygmt.makecpt(cmap='oleron',series=topo_cpt_series, continuous=True,output=topo_output_cpt,background=True) 
+    
     # pygmt.makecpt(cmap='polar',series=data_series, continuous=True,output=cmap_output_data,background=True) 
 
     if np.abs(min_data) > max_data:

@@ -361,7 +361,9 @@ class USGS_event:
         slip_rate=5.5e-5
         L = np.cbrt(float(self.MTdict['moment'])/(slip_rate*mu))
         slip = L * slip_rate
-        centroid_depth =  self.time_pos_depth['Depth'] * 1000 # setting depth as depth always too deep for MTDict
+        centroid_depth =  self.time_pos_depth['Depth']*1000 
+        print('DEPTH FOR GENERATION')
+        print(centroid_depth) # setting depth as depth always too deep for MTDict
        
         # print(centroid_depth)
         width = L 

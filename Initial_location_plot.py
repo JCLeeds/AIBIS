@@ -78,7 +78,8 @@ def location_plot(input_txt_file,poly_list,save_location):
         )
     
     color_array = ['red','blue','green','yellow','brown','lightblue','gray','lightgrey','black']
-    ii = 0 
+    ii = 0
+    edge_frames = []
     for frame in frame_coords:
         fig.plot(x=frame[0],
                 y=frame[1],
@@ -89,6 +90,8 @@ def location_plot(input_txt_file,poly_list,save_location):
             region=region,
             )
         ii += 1
+        if np.max(frame[1]) - 0.2 >= latitude and np.min(frame[1]) + 0.2 <= latitude:
+            edge_frames.append(frame[2])
 
     fig.colorbar(
     # Place the colorbar inside the plot (lower-case "j") with justification
@@ -147,6 +150,7 @@ def location_plot(input_txt_file,poly_list,save_location):
 
     # fig.show(method='external')
     fig.savefig(save_location)
+    return edge_frames
 
 if __name__ == '__main__':
     location_plot('/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/working_6/us7000gebb_insar_processing/us7000gebb.txt',[['/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/test_poly.txt'],['/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/test_frame.txt']],'test.png')

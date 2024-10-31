@@ -269,6 +269,7 @@ def main(argv=None,auto=None):
     if ex_range_file:
         with open(ex_range_file) as f:
             ex_range_str_all = f.readlines()
+        f.close()
         
         for ex_range_str1 in ex_range_str_all:
             if not tools_lib.read_range(ex_range_str1, width, length):
@@ -284,7 +285,7 @@ def main(argv=None,auto=None):
         print('Masking using polygon file') 
         with open(poly_file) as f:
             poly_strings_all = f.readlines()
-
+        f.close()
         dempar = os.path.join(in_dir, 'EQA.dem_par')
         lat1 = float(io_lib.get_param_par(dempar, 'corner_lat')) # north
         lon1 = float(io_lib.get_param_par(dempar, 'corner_lon')) # west

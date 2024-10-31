@@ -172,13 +172,16 @@ class deformation_and_noise:
         # sys.stdout = log_file
        
     
-    def run_processing_flow(self,look_for_gacos):
+    def run_processing_flow(self,look_for_gacos,good_location=False):
+        if good_location == True:
+            self.event_object.diameter_mask_in_m = self.event_object.diameter_mask_in_m/1.75
         print("################### HERE WE GO! ####################")
         print(self.geoc_path)
         print("################### CONVERTING LICS TIFS TO BINARY! ####################")
         ml_attempt = 0 # adding in due to error in pull causing this to break in 1/10
         try:
-            self.plot_location_and_frames()
+           edge_frames = self.plot_location_and_frames()
+           self.data_block.pull_data_frame_dates(startdate,enddate,frame=None,single_ifgm=False)
         except Exception as e:
             print(e)
             
@@ -309,7 +312,6 @@ class deformation_and_noise:
         ifgm = LiCS_lib.read_img(path_unw,length,width)
         return ifgm, length, width
     def plot_location_and_frames(self):
-
         poly_list = [] 
         for geoc in self.geoc_path:
             print(geoc)
@@ -411,7 +413,7 @@ class deformation_and_noise:
         cent = [float(self.event_object.time_pos_depth['Position'][0]),float(self.event_object.time_pos_depth['Position'][1])]
         print(cent)
         # clip_width = (float(self.event_object.MTdict['magnitude']) * scale_factor_mag)+(float(self.event_object.time_pos_depth['Depth'])*scale_factor_depth)
-        clip_width = (self.event_object.diameter_mask_in_m * 4)/(111.13 * 1e3) # Not tested
+        clip_width = (self.event_object.diameter_mask_in_m * 3)/(111.13 * 1e3) # Not tested
 
         print(clip_width)
         lat1 = cent[0] - clip_width/2 
@@ -466,6 +468,7 @@ class deformation_and_noise:
 
         slip = L * slip_rate
         depth = float(self.event_object.MTdict['Depth_MT'])*1000
+        # depth = float(self.event_object.time_pos_depth['Depth'])
         width = L
         length = L
         # if self.event_object.time_pos_depth['Position_USGS']:
@@ -789,7 +792,10 @@ class deformation_and_noise:
                 broken_data_pulls_geoc.append(geoc)
         for geoc in broken_data_pulls_geoc:
                 print('I am removing this geoc as the data pull failed to get all files  ' + geoc)
-                shutil.rmtree(geoc)
+                try:
+                    shutil.rmtree(geoc)
+                except:
+                    shutil.move(geoc,geoc + '_busted_delete_when_can')
                 self.geoc_path.remove(geoc)
         return 
 
@@ -983,14 +989,14 @@ class deformation_and_noise:
         else: 
             # os.chdir(cwd)
             os.chdir(self.top_level_dir)
-            shutil.copy("example_GBIS_input.inp",self.event_object.GBIS_insar_template_NP1)
+            shutil.copy("./example_GBIS_input.inp",self.event_object.GBIS_insar_template_NP1)
         
         if os.path.isfile(self.event_object.GBIS_insar_template_NP2):
             pass 
         else: 
             # os.chdir(cwd)
             os.chdir(self.top_level_dir)
-            shutil.copy("example_GBIS_input.inp",self.event_object.GBIS_insar_template_NP2)
+            shutil.copy("./example_GBIS_input.inp",self.event_object.GBIS_insar_template_NP2)
 
         return
 

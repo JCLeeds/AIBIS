@@ -240,6 +240,7 @@ def main(argv=None,auto=None,index_clip=False):
 
     clipareafile = os.path.join(out_dir, 'cliparea.txt')
     with open(clipareafile, 'w') as f: f.write(range_str)
+    f.close()
 
 
     #%% Make clipped par files
@@ -247,11 +248,12 @@ def main(argv=None,auto=None,index_clip=False):
     dempar_c = os.path.join(out_dir, 'EQA.dem_par')
     
     ### slc.mli.par
-    with open(mlipar, 'r') as f: file = f.read()
+    with open(mlipar, 'r') as f: file = f.read() 
     file = re.sub(r'range_samples:\s*{}'.format(width), 'range_samples: {}'.format(width_c), file)
     file = re.sub(r'azimuth_lines:\s*{}'.format(length), 'azimuth_lines: {}'.format(length_c), file)
+    f.close()
     with open(mlipar_c, 'w') as f: f.write(file)
-
+    f.close()
     ### EQA.dem_par
     with open(dempar, 'r') as f: file = f.read()
     file = re.sub(r'width:\s*{}'.format(width), 'width: {}'.format(width_c), file)
@@ -259,6 +261,7 @@ def main(argv=None,auto=None,index_clip=False):
     file = re.sub(r'corner_lat:\s*{}'.format(lat1), 'corner_lat: {}'.format(lat1_c), file)
     file = re.sub(r'corner_lon:\s*{}'.format(lon1), 'corner_lon: {}'.format(lon1_c), file)
     with open(dempar_c, 'w') as f: f.write(file)
+    f.close()
 
 
     #%% Clip or copy other files than unw and cc

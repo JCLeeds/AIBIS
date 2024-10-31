@@ -349,7 +349,7 @@ def main(argv=None,auto=None):
         for i, ifgd in enumerate(bad_ifgdates):
             print('{}'.format(ifgd), file=f)
             print('{}  {:5.3f}  {:5.3f}'.format(ifgd, rate_cov[ixs_bad_ifgdates[i]],  coh_avg_ifg[ixs_bad_ifgdates[i]]), flush=True)
-
+    f.close()
     ### Raise error if all ifgs are bad    # files = glob.glob(os.path.join(in_dir, '*'))
         # for file in files:
         #     if not os.path.isdir(file): #not copy directory, only file
@@ -398,7 +398,7 @@ def main(argv=None,auto=None):
         with open(bad_imfile, 'w') as f:
             for date in removed_dates:
                 f.write(date + '\n')
-
+        f.close()
 
         
                 

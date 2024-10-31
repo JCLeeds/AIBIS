@@ -227,6 +227,7 @@ def produce_final_GBISoutput(geoc_ml_path,output_geoc_ml_path, model, vertex_pat
 
     with open(os.path.join(out_dir,"surface_projection_of_fault.txt"), 'r') as f:
         lines = f.readlines()
+    f.close()
     for line in lines:
         # print(line.split(' '))
         x_project.append(float(line.split()[0]))
@@ -758,6 +759,7 @@ if __name__ == '__main__':
     event_file_path = '/uolstore/Research/a/a285/homes/ee18jwc/code/auto_inv/us6000jk0t_insar_processing/us6000jk0t.txt'
     with open(event_file_path,'r') as file:
         params = file.readlines()
+    file.close()
     name = params[0].split('=')[-1]
     time = params[1].split('=')[-1]
     latitude = float(params[2].split('=')[-1])

@@ -381,7 +381,7 @@ def main(argv=None,auto=None):
             print('radar_frequency: {} Hz'.format(radar_freq), file=f)
             if center_time is not None:
                 print('center_time: {}'.format(center_time), file=f)
-
+        f.close()
     if not os.path.exists(dempar):
         print('\nCreate EQA.dem_par', flush=True)
 
@@ -414,7 +414,7 @@ def main(argv=None,auto=None):
     
         with open(dempar, 'w') as f:
             f.write('\n'.join(text))
-
+        f.close()
 
     #%% bperp
     print('\nCopy baselines file', flush=True)
@@ -429,9 +429,11 @@ def main(argv=None,auto=None):
     else:
         print('  No valid baselines file exists. Make dummy.', flush=True)
         io_lib.make_dummy_bperp(bperp_file_out, imdates)
-
+     
+    ifgdates = tools_lib.get_ifgdates(outdir)
+    
     for i,ifgd in enumerate(ifgdates):
-        remove_ramps(i,length,width)
+        remove_ramps(ifgd,length,width)
 
 
     #%% Finish
@@ -522,12 +524,12 @@ def convert_wrapper(i):
     return 0
 
 
-def remove_ramps(i,length,width):
+def remove_ramps(ifgd,length,width):
    
-    ifgd = ifgdates2[i]
+    
     print('removing ramp from ' + str(ifgd))
     ifgdir1 = os.path.join(outdir, ifgd)
-    if not os.path.exists(ifgdir1): os.mkdir(ifgdir1)
+    # if not os.path.exists(ifgdir1): os.mkdir(ifgdir1)
 
     unwfile = os.path.join(ifgdir1, ifgd+'.unw')  
     unw = io_lib.read_img(unwfile, length, width)

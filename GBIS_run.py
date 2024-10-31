@@ -48,7 +48,9 @@ import datetime
 import local2llh as l2llh
 import glob
 import output_location_comp as olc
+import gmt_profile_plot_auto as profile
 import llh2local as llh2l
+import GBIS_output_clean as GOC
 
 
 
@@ -326,6 +328,7 @@ class auto_GBIS:
                     'index':None}
         with open(self.DaN_object.event_object.event_file_path,'r') as file:
             params = file.readlines()
+        file.close()
         time = params[1].split('=')[-1]
         for ii in range(len(self.GBIS_mat_file_location)):
             frame = self.GBIS_mat_file_location[ii].split('/')[-1].split('_floatml_')[0].replace('GEOC_', '')
@@ -387,10 +390,11 @@ class auto_GBIS:
         with open(self.path_to_data + '/ifgms_used_in_inversion.txt','w') as file:
             for index in final_indexs:
                 file.write( str(index) + 'file: ' +  self.GBIS_mat_file_location[index] + '\n')
-        
+        file.close()
             
         with open(input_loc,'r') as file:
             lines = file.readlines() 
+        file.close()
         #     file.readlines() 
         # write = [] 
         for ii in range(len(lines)):
@@ -415,7 +419,7 @@ class auto_GBIS:
         with open(input_loc, 'w') as file:
             file.writelines(lines)
             file.writelines(strings_to_write)
-    
+        file.close()
         return 
 
     def edit_input_priors(self,NP=1):
@@ -429,6 +433,7 @@ class auto_GBIS:
 
         with open(self.DaN_object.event_object.event_file_path,'r') as file:
             params = file.readlines()
+        file.close()
   
         name = params[0].split('=')[-1]
         time = params[1].split('=')[-1]
@@ -533,6 +538,7 @@ class auto_GBIS:
         print('     L       W      Z     Dip     Str      X       Y      SS       DS ')
         with open(input_loc,'r') as file:
             lines = file.readlines() 
+        file.close()
         for ii in range(len(lines)):
             # print(lines[ii])
             if 'geo.referencePoint' in lines[ii]:
@@ -660,6 +666,7 @@ class auto_GBIS:
                 print(lines[ii])
         with open(input_loc, 'w') as file:
             file.writelines(lines)
+        file.close()
         return
     def edit_input_priors_location_finding_run(self,NP=1):
         """
@@ -677,7 +684,7 @@ class auto_GBIS:
 
         with open(self.DaN_object.event_object.event_file_path,'r') as file:
             params = file.readlines()
-  
+        file.close()
         name = params[0].split('=')[-1]
         time = params[1].split('=')[-1]
         latitude = float(params[2].split('=')[-1])
@@ -754,6 +761,7 @@ class auto_GBIS:
         print('     L       W      Z     Dip     Str      X       Y      SS       DS ')
         with open(input_loc,'r') as file:
             lines = file.readlines() 
+        file.close()
         for ii in range(len(lines)):
             # print(lines[ii])
             if 'geo.referencePoint' in lines[ii]:
@@ -873,13 +881,14 @@ class auto_GBIS:
                 print(lines[ii])
         with open(input_loc, 'w') as file:
             file.writelines(lines)
+        file.close()
         return
     def edit_input_priors_wide_seach(self,NP=1):
         input_loc = self.GBIS_input_loc
 
         with open(self.DaN_object.event_object.event_file_path,'r') as file:
             params = file.readlines()
-  
+        file.close()
         name = params[0].split('=')[-1]
         time = params[1].split('=')[-1]
         latitude = float(params[2].split('=')[-1])
@@ -916,6 +925,7 @@ class auto_GBIS:
 
         with open(input_loc,'r') as file:
             lines = file.readlines() 
+        file.close()
         for ii in range(len(lines)):
             # print(lines[ii])
             if 'geo.referencePoint' in lines[ii]:
@@ -1035,6 +1045,7 @@ class auto_GBIS:
                 print(lines[ii])
         with open(input_loc, 'w') as file:
             file.writelines(lines)
+        file.close()
         return
 
 
@@ -1050,6 +1061,7 @@ class auto_GBIS:
             
         with open(self.path_to_data + '/ifgms_used_in_inversion.txt','r') as file:
             lines = file.readlines()
+        file.close()
         self.InSAR_codes = [] 
         for line in lines:
             self.InSAR_codes.append(int(line.split('file')[0])+1)
@@ -1106,6 +1118,15 @@ class auto_GBIS:
                         print(e)
                         print('Well we failed to generate a report my Friend, moving on swiftly nothing to see here')
                         pass
+
+        if self.generateReport:
+            try:
+                output_list = [f for f in glob.glob(self.outputdir +'/Figures/'+"res_los_modlos*.mat")]
+                GOC.main(self.outputfile,output_list,self.outputdir+'/Figures',int(self.number_trials*0.3),int(self.number_trials),num_faults=1)
+            except:
+                pass 
+            
+
 
 
 
@@ -1208,6 +1229,13 @@ class auto_GBIS:
                                     self.opt_model,
                                     [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
                                     self.opt_model_vertex)
+
+                    # profile.output_profile_plot(self.DaN_object.geoc_clipped_path[ii],
+                    #                 final_path,
+                    #                 self.opt_model,
+                    #                 [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
+                    #                 self.opt_model_vertex)
+                    
                 except:
                     pass
             else:
@@ -1218,6 +1246,11 @@ class auto_GBIS:
                                     self.opt_model,
                                     [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
                                     self.opt_model_vertex)
+                    # profile.output_profile_plot(self.DaN_object.geoc_clipped_path[ii],
+                    #                 final_path,
+                    #                 self.opt_model,
+                    #                 [self.DaN_object.event_object.time_pos_depth['Position'][1],self.DaN_object.event_object.time_pos_depth['Position'][0]],
+                    #                 self.opt_model_vertex)
                 except:
                     pass
 
@@ -1278,6 +1311,7 @@ class auto_GBIS:
 
         with open(self.DaN_object.event_object.event_file_path,'r') as file:
             params = file.readlines()
+        file.close()
         
         USGS_latitude = float(params[2].split('=')[-1])
         USGS_longitude = float(params[3].split('=')[-1])
@@ -1431,7 +1465,7 @@ if __name__ == "__main__":
 #                     'us6000jk0t',
 #                     'us6000ddge',
 #                     'us7000m3ur',
-#                     'us7000lsze',
+#                     'us7000lsze',generateReport
 #                     'us6000dkmk',
 #                     'us7000cet5',
 #                     'us6000bdq8',
